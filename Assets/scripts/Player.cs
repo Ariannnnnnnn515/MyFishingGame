@@ -41,7 +41,6 @@ public class PlayerMovement : MonoBehaviour
         Vector3 direction = new Vector3(horizontalInput, 0, verticalInput);
         direction = transform.rotation * direction;
 
-        // Упрощено: убрать эффект пыли  
         bool isRunning = direction != Vector3.zero && characterController.isGrounded;
 
         if (characterController.isGrounded)
