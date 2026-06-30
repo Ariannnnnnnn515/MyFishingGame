@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e6ce9dbd742f6c4bad291840c25e3df, type: 3}
   m_Name: "\u041A\u0430\u0440\u0430\u0441\u044C"
   m_EditorClassIdentifier: 
-  fishName: "\u041E\u043A\u0443\u043D\u044C"
+  fishName: "\u041A\u0430\u0440\u0430\u0441\u044C"
   weightMin: 0.2
   weightMax: 1.5
   baseResistance: 0.5

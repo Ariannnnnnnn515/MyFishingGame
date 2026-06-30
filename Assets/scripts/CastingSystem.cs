@@ -6,28 +6,28 @@ using UnityEngine;
 namespace Fishing.Systems
 {
     /// <summary>
-    /// Отвечает за анимацию броска, полёт лески и приводнение.
-    /// Использует Curve для траектории.
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Curve пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
     /// </summary>
     public class CastingSystem : MonoBehaviour
     {
-        [Header("Настройки броска")]
+        [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ")]
         [SerializeField] private float castDuration = 1.5f;
         [SerializeField] private AnimationCurve heightCurve = AnimationCurve.EaseInOut(0, 0, 1, 0);
 
-        [Header("Компоненты")]
+        [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
         [SerializeField] private LineVisualizer lineVisual;
-        [SerializeField] private Transform castOrigin; // Точка старта (рука/удочка)
+        [SerializeField] private Transform castOrigin; // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅ/пїЅпїЅпїЅпїЅпїЅпїЅ)
 
         private Action onCompleteCallback;
         private Vector3 targetPos;
         private float castTimer;
         private bool isCasting;
 
-        public void Initialize(FishingController controller) { /* Можно подписаться на события */ }
+        public void Initialize(FishingController controller) { /* пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ */ }
 
         /// <summary>
-        /// Начать процесс заброса.
+        /// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
         /// </summary>
         public void StartCast(Vector3 target, Action callback)
         {
@@ -37,7 +37,7 @@ namespace Fishing.Systems
             isCasting = true;
 
             lineVisual?.EnableLine(true);
-            Debug.Log($"Бросок в {target}");
+            Debug.Log($"пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ {target}");
         }
 
         private void Update()
@@ -52,11 +52,11 @@ namespace Fishing.Systems
                 return;
             }
 
-            // Вычисляем позицию лески по кривой
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
             Vector3 currentPos = Vector3.Lerp(castOrigin.position, targetPos, castTimer);
-            currentPos.y += heightCurve.Evaluate(castTimer) * 2f; // Высота дуги
+            currentPos.y += heightCurve.Evaluate(castTimer) * 2f; // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 
-            // Обновляем визуал лески
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
             lineVisual?.UpdateLine(castOrigin.position, currentPos);
         }
 
