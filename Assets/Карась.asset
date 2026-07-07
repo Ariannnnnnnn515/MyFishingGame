@@ -17,6 +17,6 @@ MonoBehaviour:
   weightMax: 1.5
   baseResistance: 0.5
   escapeSpeed: 0.3
-  fishPrefab: {fileID: 0}
+  fishPrefab: {fileID: 1502018486269965791, guid: b3b0213588f6c574191a2b91e4cf3dbb, type: 3}
   iconInUI: {fileID: 0}
   experienceReward: 10
