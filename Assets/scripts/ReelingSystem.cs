@@ -1,79 +1,112 @@
+using TMPro;
 using UnityEngine;
-using Fishing.Core.Interfaces;
+using UnityEngine.UI;
 using Fishing.Core;
+using Fishing.Core.Interfaces;
 
 namespace Fishing.Systems
 {
-    /// <summary>
-    /// Интерактивная мини-игра: игрок должен удерживать ползунок 
-    /// в определённой зоне, чтобы утомить рыбу.
-    /// </summary>
     public class ReelingSystem : MonoBehaviour
     {
-        [Header("Параметры игры")]
-        [SerializeField] private float fightDuration = 5f; // Макс. время борьбы
-        [SerializeField] private float targetZoneSize = 0.3f; // Размер "золотой зоны"
-        [SerializeField] private float tensionMultiplier = 1.5f;
+        [Header("РќР°СЃС‚СЂРѕР№РєРё РјРёРЅРё-РёРіСЂС‹")]
+        [SerializeField] private float fightDuration = 10f;
+        [SerializeField] private float targetZoneSize = 0.3f;
+        [SerializeField] private float tensionMultiplier = 0.7f;
+
+        [Header("РРЅС‚РµСЂС„РµР№СЃ")]
+        [SerializeField] private GameObject reelingUI;
+        [SerializeField] private Slider tensionSlider;
+        [SerializeField] private TMP_Text hintText;
 
         private FishingController controller;
         private IFishable currentFish;
         private float fightTimer;
         private bool isFighting;
 
-        // Для UI (будет использоваться внешним скриптом)
         public float CurrentTension { get; private set; }
         public float FishResistance => currentFish?.CurrentResistance ?? 0f;
 
-        public void Initialize(FishingController controller) => this.controller = controller;
+        public void Initialize(FishingController fishingController)
+        {
+            controller = fishingController;
+        }
 
-        /// <summary>
-        /// Начать борьбу с рыбой.
-        /// </summary>
         public void StartFight(IFishable fish)
         {
             currentFish = fish;
             fightTimer = 0f;
+            CurrentTension = 0f;
             isFighting = true;
-            Debug.Log("Началась мини-игра вываживания!");
+
+            if (reelingUI != null)
+                reelingUI.SetActive(true);
+
+            UpdateUI(false);
+            Debug.Log("РњРёРЅРё-РёРіСЂР° РЅР°С‡Р°Р»Р°СЃСЊ: СѓРґРµСЂР¶РёРІР°Р№ Рё РѕС‚РїСѓСЃРєР°Р№ Р›РљРњ.");
         }
 
         private void Update()
         {
-            if (!isFighting || currentFish == null) return;
+            if (!isFighting || currentFish == null)
+                return;
 
-            // Получаем ввод игрока (ось или кнопка)
-            float playerInput = Input.GetAxis("Vertical"); // Или использовать Input System
+            float wantedTension = Input.GetMouseButton(0) ? 1f : 0f;
 
-            // Преобразуем в силу натяжения (0-1)
-            CurrentTension = Mathf.Clamp01(Mathf.Abs(playerInput) * tensionMultiplier);
+            CurrentTension = Mathf.MoveTowards(
+                CurrentTension,
+                wantedTension,
+                tensionMultiplier * Time.deltaTime
+            );
 
-            // Проверяем, находится ли игрок в "золотой зоне"
-            bool isInTargetZone = (CurrentTension >= FishResistance - targetZoneSize / 2) &&
-                                  (CurrentTension <= FishResistance + targetZoneSize / 2);
+            float halfZone = targetZoneSize / 2f;
+            bool isInTargetZone =
+                CurrentTension >= FishResistance - halfZone &&
+                CurrentTension <= FishResistance + halfZone;
+
+            UpdateUI(isInTargetZone);
 
             if (isInTargetZone)
             {
-                // Правильное натяжение - утомляем рыбу
                 if (currentFish.ApplyTension(CurrentTension))
                 {
-                    // Рыба устала!
                     OnFishTired();
                     return;
                 }
             }
             else
             {
-                // Игрок ошибается - рыба восстанавливается (ApplyTension с отрицательным эффектом)
-                currentFish.ApplyTension(0f); // Даём рыбе отдых
+                currentFish.ApplyTension(0f);
             }
 
-            // Таймер борьбы (если время вышло - рыба уходит)
             fightTimer += Time.deltaTime;
+
             if (fightTimer >= fightDuration)
             {
                 controller.OnFishEscape();
                 StopFight();
             }
+        }
+
+        private void UpdateUI(bool isInTargetZone)
+        {
+            if (tensionSlider != null)
+                tensionSlider.value = CurrentTension;
+
+            if (hintText == null)
+                return;
+
+            string instruction;
+
+            if (isInTargetZone)
+                instruction = "Р”РµСЂР¶Рё С‚Р°Рє!";
+            else if (CurrentTension < FishResistance)
+                instruction = "Р—Р°Р¶РјРё Р›РљРњ вЂ” РЅР°С‚СЏРЅРё Р»РµСЃРєСѓ";
+            else
+                instruction = "РћС‚РїСѓСЃС‚Рё Р›РљРњ вЂ” РѕСЃР»Р°Р±СЊ Р»РµСЃРєСѓ";
+
+            hintText.text =
+                $"Р›РµСЃРєР°: {CurrentTension:F2} | Р¦РµР»СЊ: {FishResistance:F2}\n" +
+                instruction;
         }
 
         private void OnFishTired()
@@ -87,12 +120,19 @@ namespace Fishing.Systems
             isFighting = false;
             currentFish = null;
             CurrentTension = 0f;
+
+            if (tensionSlider != null)
+                tensionSlider.value = 0f;
+
+            if (reelingUI != null)
+                reelingUI.SetActive(false);
         }
 
         public void ForceEscape()
         {
             if (isFighting)
                 controller.OnFishEscape();
+
             StopFight();
         }
     }

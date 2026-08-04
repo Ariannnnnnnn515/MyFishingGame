@@ -7,24 +7,24 @@ using Fishing.Systems;
 namespace Fishing.Core
 {
     /// <summary>
-    /// Главный контроллер рыбалки. Синглтон.
-    /// Координирует системы броска, поклёвки и вываживания.
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
     /// </summary>
     public class FishingController : MonoBehaviour
     {
         public static FishingController Instance { get; private set; }
 
-        // Ссылки на подсистемы (инжектим через Inspector или Find)
+        // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ Inspector пїЅпїЅпїЅ Find)
         [SerializeField] private CastingSystem castingSystem;
         [SerializeField] private BiteSystem biteSystem;
         [SerializeField] private ReelingSystem reelingSystem;
 
-        [Header("Текущие данные")]
+        [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ")]
         [SerializeField] private FishingSpotData currentSpot;
-        [SerializeField] private FishData currentFishData; // Целевая рыба (до поклёвки)
-        public IFishable CurrentFish { get; private set; } // Экземпляр рыбы в бою
+        [SerializeField] private FishData currentFishData; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ (пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
+        public IFishable CurrentFish { get; private set; } // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ
 
-        public event Action<FishData> OnFishHooked;   // Событие для UI/Аудио
+        public event Action<FishData> OnFishHooked;   // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ UI/пїЅпїЅпїЅпїЅпїЅ
         public event Action<FishData> OnFishLanded;
         public event Action OnFishEscaped;
 
@@ -38,20 +38,20 @@ namespace Fishing.Core
 
         private void Start()
         {
-            // Инициализация подсистем
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             castingSystem.Initialize(this);
             biteSystem.Initialize(this);
             reelingSystem.Initialize(this);
         }
 
         /// <summary>
-        /// Инициировать бросок в указанную точку.
+        /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
         /// </summary>
         public void PerformCast(Vector3 targetPosition, FishingSpotData spot)
         {
             if (CurrentFish != null && CurrentFish.State != FishState.Landed)
             {
-                Debug.LogWarning("Нельзя бросить, пока рыба на крючке!");
+                Debug.LogWarning("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ!");
                 return;
             }
 
@@ -60,43 +60,43 @@ namespace Fishing.Core
         }
 
         /// <summary>
-        /// Колбэк после завершения броска (леска упала в воду).
+        /// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ).
         /// </summary>
         private void OnCastComplete()
         {
-            Debug.Log("Леска в воде. Ждём поклёвку...");
+            Debug.Log("пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ. пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ...");
             biteSystem.StartWaiting(currentSpot);
         }
 
         /// <summary>
-        /// Вызывается из BiteSystem при поклёвке.
+        /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ BiteSystem пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
         /// </summary>
         public void OnBiteOccurred(FishData fishData)
         {
             currentFishData = fishData;
-            // Создаём экземпляр рыбы (например, через Factory или простой new)
-            CurrentFish = new FishInstance(fishData); // Реализуем ниже
+            // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ Factory пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ new)
+            CurrentFish = new FishInstance(fishData); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 
             CurrentFish.OnHooked();
             OnFishHooked?.Invoke(fishData);
 
-            // Переключаемся в мини-игру вываживания
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             reelingSystem.StartFight(CurrentFish);
         }
 
         /// <summary>
-        /// Вызывается из ReelingSystem, когда рыба вымотана.
+        /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ ReelingSystem, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
         /// </summary>
         public void OnFishTired()
         {
-            // Логика подсечки и финального вываживания
+            // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             CurrentFish.State = FishState.Landed;
             OnFishLanded?.Invoke(currentFishData);
 
-            // Спавн модели рыбы в руках игрока (вызов извне)
-            Debug.Log($"Рыба {currentFishData.fishName} поймана!");
+            // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ)
+            Debug.Log($"пїЅпїЅпїЅпїЅ {currentFishData.fishName} пїЅпїЅпїЅпїЅпїЅпїЅпїЅ!");
 
-            // Сброс состояния
+            // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             CurrentFish = null;
         }
 
@@ -105,10 +105,10 @@ namespace Fishing.Core
             CurrentFish?.OnEscape();
             OnFishEscaped?.Invoke();
             CurrentFish = null;
-            Debug.Log("Рыба сорвалась!");
+            Debug.Log("пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ!");
         }
 
-        // Простая реализация IFishable на основе FishData
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ IFishable пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ FishData
         private class FishInstance : IFishable
         {
             private FishData data;
@@ -117,7 +117,7 @@ namespace Fishing.Core
 
             public string SpeciesId => data.name;
             public FishState State { get; set; }
-            public float CurrentResistance => Mathf.Lerp(0.2f, 1f, currentTiredness / data.escapeSpeed);
+            public float CurrentResistance => Mathf.Clamp(maxResistance, 0.25f, 0.8f);
 
             public FishInstance(FishData data)
             {
@@ -131,25 +131,20 @@ namespace Fishing.Core
 
             public bool ApplyTension(float tensionPower)
             {
-                // tensionPower = сила натяжения от игрока (0-1)
-                // Если tensionPower > сопротивления, рыба устаёт
-                if (tensionPower > CurrentResistance)
-                {
-                    currentTiredness += Time.deltaTime * 0.5f;
-                }
+                // ReelingSystem пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ.
+                if (tensionPower > 0f)
+                    currentTiredness += Time.deltaTime * data.escapeSpeed;
                 else
-                {
-                    // Если игрок ослабляет, рыба восстанавливает силы (чуть-чуть)
-                    currentTiredness -= Time.deltaTime * 0.1f;
-                }
+                    currentTiredness -= Time.deltaTime * 0.15f;
 
                 currentTiredness = Mathf.Clamp01(currentTiredness);
 
                 if (currentTiredness >= 1f)
                 {
                     State = FishState.Tired;
-                    return true; // Рыба устала
+                    return true;
                 }
+
                 return false;
             }
         }
