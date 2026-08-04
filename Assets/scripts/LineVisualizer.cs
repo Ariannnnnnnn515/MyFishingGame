@@ -19,6 +19,7 @@ namespace Fishing.Visual
         {
             lineRenderer = GetComponent<LineRenderer>();
             lineRenderer.positionCount = segments;
+            lineRenderer.enabled = false; // До заброса леску не показываем.
         }
 
         /// <summary>

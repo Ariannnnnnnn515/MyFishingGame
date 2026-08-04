@@ -1,63 +1,66 @@
-using Fishing.Core;
-using Fishing.Visual;
 using System;
 using UnityEngine;
+using Fishing.Core;
+using Fishing.Visual;
 
 namespace Fishing.Systems
 {
-    /// <summary>
-    /// �������� �� �������� ������, ���� ����� � �����������.
-    /// ���������� Curve ��� ����������.
-    /// </summary>
     public class CastingSystem : MonoBehaviour
     {
-        [Header("��������� ������")]
+        [Header("Настройки заброса")]
         [SerializeField] private float castDuration = 1.5f;
-        [SerializeField] private AnimationCurve heightCurve = AnimationCurve.EaseInOut(0, 0, 1, 0);
+        [SerializeField]
+        private AnimationCurve heightCurve =
+            AnimationCurve.EaseInOut(0, 0, 1, 0);
 
-        [Header("����������")]
+        [Header("Ссылки")]
         [SerializeField] private LineVisualizer lineVisual;
-        [SerializeField] private Transform castOrigin; // ����� ������ (����/������)
+        [SerializeField] private Transform castOrigin;
 
         private Action onCompleteCallback;
-        private Vector3 targetPos;
-        private float castTimer;
+        private Vector3 targetPosition;
+        private float castProgress;
         private bool isCasting;
 
-        public void Initialize(FishingController controller) { /* ����� ����������� �� ������� */ }
+        public void Initialize(FishingController controller)
+        {
+            // Контроллер пока не нужен: результат возвращаем через callback.
+        }
 
-        /// <summary>
-        /// ������ ������� �������.
-        /// </summary>
         public void StartCast(Vector3 target, Action callback)
         {
-            targetPos = target;
+            targetPosition = target;
             onCompleteCallback = callback;
-            castTimer = 0f;
+            castProgress = 0f;
             isCasting = true;
 
             lineVisual?.EnableLine(true);
-            Debug.Log($"������ � {target}");
+            Debug.Log($"Заброс в точку {targetPosition}");
         }
 
         private void Update()
         {
-            if (!isCasting) return;
+            if (!isCasting)
+                return;
 
-            castTimer += Time.deltaTime / castDuration;
-            if (castTimer >= 1f)
+            castProgress += Time.deltaTime / castDuration;
+
+            if (castProgress >= 1f)
             {
+                lineVisual?.UpdateLine(castOrigin.position, targetPosition);
                 isCasting = false;
                 onCompleteCallback?.Invoke();
                 return;
             }
 
-            // ��������� ������� ����� �� ������
-            Vector3 currentPos = Vector3.Lerp(castOrigin.position, targetPos, castTimer);
-            currentPos.y += heightCurve.Evaluate(castTimer) * 2f; // ������ ����
+            Vector3 currentPosition = Vector3.Lerp(
+                castOrigin.position,
+                targetPosition,
+                castProgress
+            );
 
-            // ��������� ������ �����
-            lineVisual?.UpdateLine(castOrigin.position, currentPos);
+            currentPosition.y += heightCurve.Evaluate(castProgress) * 2f;
+            lineVisual?.UpdateLine(castOrigin.position, currentPosition);
         }
 
         public void ResetCast()
