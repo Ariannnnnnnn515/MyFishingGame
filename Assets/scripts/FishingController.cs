@@ -7,26 +7,27 @@ using Fishing.Systems;
 namespace Fishing.Core
 {
     /// <summary>
-    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
-    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+    ///   . .
+    ///   ,   .
     /// </summary>
     public class FishingController : MonoBehaviour
     {
         public static FishingController Instance { get; private set; }
 
-        // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ Inspector пїЅпїЅпїЅ Find)
+        //    (  Inspector  Find)
         [SerializeField] private CastingSystem castingSystem;
         [SerializeField] private BiteSystem biteSystem;
         [SerializeField] private ReelingSystem reelingSystem;
 
-        [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ")]
+        [Header(" ")]
         [SerializeField] private FishingSpotData currentSpot;
-        [SerializeField] private FishData currentFishData; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ (пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
-        public IFishable CurrentFish { get; private set; } // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ
+        [SerializeField] private FishData currentFishData; //   ( )
+        public IFishable CurrentFish { get; private set; } //    
 
-        public event Action<FishData> OnFishHooked;   // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ UI/пїЅпїЅпїЅпїЅпїЅ
+        public event Action<FishData> OnFishHooked;   //   UI/
         public event Action<FishData> OnFishLanded;
         public event Action OnFishEscaped;
+        private bool isFishingInProgress;
 
         private void Awake()
         {
@@ -38,77 +39,100 @@ namespace Fishing.Core
 
         private void Start()
         {
-            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+            //  
             castingSystem.Initialize(this);
             biteSystem.Initialize(this);
             reelingSystem.Initialize(this);
         }
 
         /// <summary>
-        /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
+        ///     .
         /// </summary>
         public void PerformCast(Vector3 targetPosition, FishingSpotData spot)
         {
-            if (CurrentFish != null && CurrentFish.State != FishState.Landed)
+            if (isFishingInProgress)
             {
-                Debug.LogWarning("пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ!");
+                Debug.LogWarning("Сначала заверши текущую рыбалку!");
                 return;
             }
 
+            if (spot == null)
+            {
+                Debug.LogError("Для заброса не выбрана FishingSpotData!");
+                return;
+            }
+
+            isFishingInProgress = true;
             currentSpot = spot;
             castingSystem.StartCast(targetPosition, OnCastComplete);
         }
 
         /// <summary>
-        /// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ).
+        ///     (   ).
         /// </summary>
         private void OnCastComplete()
         {
-            Debug.Log("пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ. пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ...");
+            Debug.Log("  .  ...");
             biteSystem.StartWaiting(currentSpot);
         }
 
         /// <summary>
-        /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ BiteSystem пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+        ///   BiteSystem  .
         /// </summary>
         public void OnBiteOccurred(FishData fishData)
         {
+            // Защита от запоздавшей корутины после отмены.
+            if (!isFishingInProgress || fishData == null)
+                return;
+
             currentFishData = fishData;
-            // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ Factory пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ new)
-            CurrentFish = new FishInstance(fishData); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+            CurrentFish = new FishInstance(fishData);
 
             CurrentFish.OnHooked();
             OnFishHooked?.Invoke(fishData);
-
-            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             reelingSystem.StartFight(CurrentFish);
         }
 
         /// <summary>
-        /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ ReelingSystem, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+        ///   ReelingSystem,   .
         /// </summary>
         public void OnFishTired()
         {
-            // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+            if (CurrentFish == null || currentFishData == null)
+                return;
+
             CurrentFish.State = FishState.Landed;
-            OnFishLanded?.Invoke(currentFishData);
+            FishData landedFish = currentFishData;
 
-            // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ)
-            Debug.Log($"пїЅпїЅпїЅпїЅ {currentFishData.fishName} пїЅпїЅпїЅпїЅпїЅпїЅпїЅ!");
-
-            // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
-            CurrentFish = null;
+            Debug.Log($"Рыба {landedFish.fishName} поймана!");
+            ResetFishingSystems();
+            OnFishLanded?.Invoke(landedFish);
         }
 
         public void OnFishEscape()
         {
+            if (!isFishingInProgress)
+                return;
+
             CurrentFish?.OnEscape();
+            ResetFishingSystems();
             OnFishEscaped?.Invoke();
-            CurrentFish = null;
-            Debug.Log("пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ!");
+            Debug.Log("Рыбалка завершена без улова.");
         }
 
-        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ IFishable пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ FishData
+        private void ResetFishingSystems()
+        {
+            biteSystem.StopWaiting();
+            reelingSystem.StopFight();
+            castingSystem.ResetCast();
+
+            CurrentFish = null;
+            currentFishData = null;
+            currentSpot = null;
+            isFishingInProgress = false;
+        }
+
+        //   IFishable   FishData
         private class FishInstance : IFishable
         {
             private FishData data;
@@ -131,7 +155,7 @@ namespace Fishing.Core
 
             public bool ApplyTension(float tensionPower)
             {
-                // ReelingSystem пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ.
+                // ReelingSystem        .
                 if (tensionPower > 0f)
                     currentTiredness += Time.deltaTime * data.escapeSpeed;
                 else

@@ -6,12 +6,12 @@ using Fishing.Core;
 namespace Fishing.Systems
 {
     /// <summary>
-    /// Симуляция ожидания поклёвки. 
-    /// Использует рандом с учётом веса рыбы из пула.
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. 
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ.
     /// </summary>
     public class BiteSystem : MonoBehaviour
     {
-        [Header("Временные параметры")]
+        [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
         [SerializeField] private float minWaitTime = 3f;
         [SerializeField] private float maxWaitTime = 20f;
 
@@ -22,7 +22,7 @@ namespace Fishing.Systems
         public void Initialize(FishingController controller) => this.controller = controller;
 
         /// <summary>
-        /// Начать ожидание поклёвки в указанной зоне.
+        /// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ.
         /// </summary>
         public void StartWaiting(FishingSpotData spot)
         {
@@ -33,33 +33,36 @@ namespace Fishing.Systems
 
         private IEnumerator WaitForBite()
         {
-            // Случайное время ожидания
-            float waitTime = Random.Range(minWaitTime, maxWaitTime) / currentSpot.biteChanceModifier;
-            yield return new WaitForSeconds(waitTime);
-
-            // Выбираем рыбу из пула по весам
-            FishData selectedFish = SelectFishFromPool();
-            if (selectedFish != null)
+            while (currentSpot != null)
             {
-                // Добавляем шанс "пустой поклёвки" (10%)
-                if (Random.value < 0.1f)
+                float modifier = Mathf.Max(0.1f, currentSpot.biteChanceModifier);
+                float waitTime = Random.Range(minWaitTime, maxWaitTime) / modifier;
+                yield return new WaitForSeconds(waitTime);
+
+                FishData selectedFish = SelectFishFromPool();
+
+                if (selectedFish == null)
                 {
-                    Debug.Log("Пустая поклёвка...");
-                    StartWaiting(currentSpot); // Перезапускаем ожидание
-                    yield break;
+                    Debug.LogWarning("Р’ С‚РѕС‡РєРµ Р»РѕРІР»Рё РЅРµС‚ СЂС‹Р±С‹!");
+                    continue;
                 }
 
+                if (Random.value < 0.1f)
+                {
+                    Debug.Log("Р›РѕР¶РЅР°СЏ РїРѕРєР»С‘РІРєР°. Р–РґС‘Рј РµС‰С‘...");
+                    continue;
+                }
+
+                waitingCoroutine = null;
                 controller.OnBiteOccurred(selectedFish);
+                yield break;
             }
-            else
-            {
-                Debug.LogWarning("В пуле нет рыбы! Проверьте FishingSpotData.");
-                StartWaiting(currentSpot);
-            }
+
+            waitingCoroutine = null;
         }
 
         /// <summary>
-        /// Выбор рыбы на основе весов (spawnWeight).
+        /// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ (spawnWeight).
         /// </summary>
         private FishData SelectFishFromPool()
         {
@@ -86,6 +89,8 @@ namespace Fishing.Systems
                 StopCoroutine(waitingCoroutine);
                 waitingCoroutine = null;
             }
+
+            currentSpot = null;
         }
     }
 }

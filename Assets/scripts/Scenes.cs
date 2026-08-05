@@ -1,5 +1,5 @@
-public class Scenes 
+public static class Scenes
 {
     public const string MainMenu = "MainMenu";
-    public const string Scene1 = "GamePlay";
+    public const string Gameplay = "Scene1";
 }

@@ -3,17 +3,15 @@ using UnityEngine.SceneManagement;
 
 public class MainMenuUI : MonoBehaviour
 {
-    [SerializeField] private string sceneToLoad = "Gameplay";
-
     public void StartGame()
     {
-        print("Начинаем игру");
-        SceneManager.LoadScene(sceneToLoad);
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(Scenes.Gameplay);
     }
 
     public void ExitGame()
     {
-        print("Выходим из игры");
+        Debug.Log("Выход из игры");
         Application.Quit();
     }
 }

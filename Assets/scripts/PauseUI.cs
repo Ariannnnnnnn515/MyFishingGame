@@ -38,10 +38,10 @@ public class PauseUI : MonoBehaviour
     }
     public void BackToMainMenu()
     {
+        Time.timeScale = 1f;
+        Cursor.lockState = CursorLockMode.None;
         SceneManager.LoadScene(Scenes.MainMenu);
-
     }
-
     public void BackToGame()
     {
         Close();
