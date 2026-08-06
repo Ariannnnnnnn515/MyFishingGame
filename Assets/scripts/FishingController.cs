@@ -16,6 +16,7 @@ namespace Fishing.Core
 
         //    (  Inspector  Find)
         [SerializeField] private CastingSystem castingSystem;
+        [SerializeField] private FishCatchUI catchUI;
         [SerializeField] private BiteSystem biteSystem;
         [SerializeField] private ReelingSystem reelingSystem;
 
@@ -52,13 +53,13 @@ namespace Fishing.Core
         {
             if (isFishingInProgress)
             {
-                Debug.LogWarning("Сначала заверши текущую рыбалку!");
+                Debug.LogWarning("   !");
                 return;
             }
 
             if (spot == null)
             {
-                Debug.LogError("Для заброса не выбрана FishingSpotData!");
+                Debug.LogError("    FishingSpotData!");
                 return;
             }
 
@@ -81,7 +82,7 @@ namespace Fishing.Core
         /// </summary>
         public void OnBiteOccurred(FishData fishData)
         {
-            // Защита от запоздавшей корутины после отмены.
+            //      .
             if (!isFishingInProgress || fishData == null)
                 return;
 
@@ -104,10 +105,10 @@ namespace Fishing.Core
             CurrentFish.State = FishState.Landed;
             FishData landedFish = currentFishData;
 
-            Debug.Log($"Рыба {landedFish.fishName} поймана!");
+            Debug.Log($" {landedFish.fishName} !");
 
-            // После этого можно остановить мини-игру
-            // ... ваш код для сброса состояния мини-игры ...
+            //     -
+            // ...      - ...
             ResetFishingSystems();
             OnFishLanded?.Invoke(landedFish);
         }
@@ -120,7 +121,7 @@ namespace Fishing.Core
             CurrentFish?.OnEscape();
             ResetFishingSystems();
             OnFishEscaped?.Invoke();
-            Debug.Log("Рыбалка завершена без улова.");
+            Debug.Log("   .");
         }
 
         private void ResetFishingSystems()

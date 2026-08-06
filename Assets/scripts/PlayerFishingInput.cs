@@ -7,6 +7,7 @@ public class PlayerFishingInput : MonoBehaviour
 {
     [Header("Рыбалка")]
     [SerializeField] private FishingSpotData currentFishingSpot;
+    [SerializeField] private FishCatchUI catchUI;
     [SerializeField] private Transform castTarget;
     [SerializeField] private float maxCastDistance = 100f;
 
@@ -119,5 +120,19 @@ public class PlayerFishingInput : MonoBehaviour
 
         if (statusText != null)
             statusText.text = message;
+    }
+    public void OnFishCaught(FishConfig caughtFish)
+    {
+        // ... ваша логика, например, остановка времени и т.д. ...
+        
+        // Проверяем, что UI существует, и показываем результат
+        if (catchUI != null)
+        {
+            catchUI.ShowCatchResult(caughtFish);
+        }
+        else
+        {
+            Debug.LogError("FishCatchUI не назначен в инспекторе!");
+        }
     }
 }
