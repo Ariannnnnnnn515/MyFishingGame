@@ -2006,7 +2006,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   castingSystem: {fileID: 1580823850}
-  catchUI: {fileID: 1698955303}
   biteSystem: {fileID: 739868036}
   reelingSystem: {fileID: 1517912067}
   currentSpot: {fileID: 11400000, guid: 42f4e48bc90b00a4c8e894d4786d4a3a, type: 2}
@@ -3596,6 +3595,7 @@ MonoBehaviour:
   mouseSensivity: 2
   lookLimit: 90
   animator: {fileID: 0}
+  catchUI: {fileID: 1698955303}
 --- !u!136 &956641470
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -3702,8 +3702,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2701ae76c66741e4881b9a20b5deb083, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  catchUI: {fileID: 1698955303}
   currentFishingSpot: {fileID: 11400000, guid: 42f4e48bc90b00a4c8e894d4786d4a3a, type: 2}
-  catchUI: {fileID: 0}
   castTarget: {fileID: 0}
   maxCastDistance: 100
   statusText: {fileID: 773454549}
@@ -5319,6 +5319,7 @@ MonoBehaviour:
   weightText: {fileID: 773454549}
   keepButton: {fileID: 793222973}
   releaseButton: {fileID: 318835246}
+  playerCamera: {fileID: 330585545}
   spawnDistance: 3
   modelOffset: {x: 0, y: -0.5, z: 0}
   modelRotation: {x: 0, y: 180, z: 0}

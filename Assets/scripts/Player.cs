@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Player : MonoBehaviour  
+public class Player : MonoBehaviour
 {
     private static readonly int IsRunning = Animator.StringToHash("IsRunning");
     private static readonly int IsJumping = Animator.StringToHash("IsJumping");
@@ -19,6 +19,9 @@ public class Player : MonoBehaviour
     [Header("Animation")]
     [SerializeField] private Animator animator;
 
+    [Header("UI")]
+    [SerializeField] private FishCatchUI catchUI; // Ссылка на панель результата
+
     private float xRotation = 0;
     private float verticalVelocity = 0;
 
@@ -35,6 +38,10 @@ public class Player : MonoBehaviour
 
     private void Move()
     {
+        // Если панель результата активна - не обрабатываем движение
+        if (catchUI != null && catchUI.gameObject.activeSelf)
+            return;
+
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
 
@@ -49,12 +56,12 @@ public class Player : MonoBehaviour
             {
                 verticalVelocity = jumpForce;
             }
-            else  
+            else
             {
                 verticalVelocity = -1f;
             }
         }
-        else  
+        else
         {
             verticalVelocity -= gravityForce * Time.deltaTime;
         }
@@ -65,6 +72,10 @@ public class Player : MonoBehaviour
 
     private void Look()
     {
+        // Если панель результата активна - не обрабатываем поворот камеры
+        if (catchUI != null && catchUI.gameObject.activeSelf)
+            return;
+
         float mouseX = Input.GetAxis("Mouse X") * mouseSensivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensivity;
 

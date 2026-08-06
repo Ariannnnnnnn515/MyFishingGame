@@ -6,8 +6,9 @@ using Fishing.Core.Data;
 public class PlayerFishingInput : MonoBehaviour
 {
     [Header("Рыбалка")]
-    [SerializeField] private FishingSpotData currentFishingSpot;
     [SerializeField] private FishCatchUI catchUI;
+    [SerializeField] private FishingSpotData currentFishingSpot;
+
     [SerializeField] private Transform castTarget;
     [SerializeField] private float maxCastDistance = 100f;
 
@@ -16,6 +17,7 @@ public class PlayerFishingInput : MonoBehaviour
 
     private FishingController fishingController;
     private bool isFishingActive;
+    private FishData currentFishData; // Сохраняем данные о пойманной рыбе
 
     private void Start()
     {
@@ -98,6 +100,7 @@ public class PlayerFishingInput : MonoBehaviour
     private void OnFishHooked(FishData fish)
     {
         isFishingActive = true;
+        currentFishData = fish; // Сохраняем данные о рыбе
         ShowStatus($"Поклёвка! {fish.fishName} на крючке!");
     }
 
@@ -105,12 +108,21 @@ public class PlayerFishingInput : MonoBehaviour
     {
         float weight = Random.Range(fish.weightMin, fish.weightMax);
         isFishingActive = false;
+
+        // Сохраняем окончательные данные
+        currentFishData = fish;
+
+        // Показываем статус
         ShowStatus($"Поймана рыба: {fish.fishName}, {weight:F1} кг!");
+
+        // ВЫЗЫВАЕМ МЕТОД ДЛЯ ПОКАЗА UI С РЫБОЙ
+        OnFishCaught(currentFishData);
     }
 
     private void OnFishEscaped()
     {
         isFishingActive = false;
+        currentFishData = null;
         ShowStatus("Рыбалка завершена. Можно сделать новый заброс.");
     }
 
@@ -121,11 +133,47 @@ public class PlayerFishingInput : MonoBehaviour
         if (statusText != null)
             statusText.text = message;
     }
+
+    /// <summary>
+    /// Показывает UI с результатом поимки рыбы
+    /// </summary>
+    /// <param name="fishData">Данные о пойманной рыбе (FishData)</param>
+    public void OnFishCaught(FishData fishData)
+    {
+        if (fishData == null)
+        {
+            Debug.LogError("OnFishCaught: Переданы пустые данные о рыбе!");
+            return;
+        }
+
+        // Проверяем, что UI существует
+        if (catchUI == null)
+        {
+            Debug.LogError("FishCatchUI не назначен в инспекторе!");
+            return;
+        }
+
+        // КОНВЕРТИРУЕМ FishData В FishConfig (для совместимости с вашим UI)
+        FishConfig config = new FishConfig
+        {
+            fishName = fishData.fishName,
+            fishWeight = Random.Range(fishData.weightMin, fishData.weightMax),
+            fishPrefab = fishData.fishPrefab // Предполагаю, что в FishData есть поле fishPrefab
+        };
+
+        // Показываем результат
+        catchUI.ShowCatchResult(config);
+    }
+
+    // Перегрузка метода для прямого использования FishConfig (если понадобится)
     public void OnFishCaught(FishConfig caughtFish)
     {
-        // ... ваша логика, например, остановка времени и т.д. ...
-        
-        // Проверяем, что UI существует, и показываем результат
+        if (caughtFish == null)
+        {
+            Debug.LogError("OnFishCaught: Передан пустой конфиг рыбы!");
+            return;
+        }
+
         if (catchUI != null)
         {
             catchUI.ShowCatchResult(caughtFish);

@@ -16,7 +16,6 @@ namespace Fishing.Core
 
         // ������ �� ���������� (�������� ����� Inspector ��� Find)
         [SerializeField] private CastingSystem castingSystem;
-        [SerializeField] private FishCatchUI catchUI;
         [SerializeField] private BiteSystem biteSystem;
         [SerializeField] private ReelingSystem reelingSystem;
 
