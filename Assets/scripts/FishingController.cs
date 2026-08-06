@@ -7,25 +7,25 @@ using Fishing.Systems;
 namespace Fishing.Core
 {
     /// <summary>
-    /// ˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜. ˜˜˜˜˜˜˜˜.
-    /// ˜˜˜˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜ ˜˜˜˜˜˜, ˜˜˜˜˜˜˜ ˜ ˜˜˜˜˜˜˜˜˜˜˜.
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
     /// </summary>
     public class FishingController : MonoBehaviour
     {
         public static FishingController Instance { get; private set; }
 
-        // ˜˜˜˜˜˜ ˜˜ ˜˜˜˜˜˜˜˜˜˜ (˜˜˜˜˜˜˜˜ ˜˜˜˜˜ Inspector ˜˜˜ Find)
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ Inspector ï¿½ï¿½ï¿½ Find)
         [SerializeField] private CastingSystem castingSystem;
         [SerializeField] private FishCatchUI catchUI;
         [SerializeField] private BiteSystem biteSystem;
         [SerializeField] private ReelingSystem reelingSystem;
 
-        [Header("˜˜˜˜˜˜˜ ˜˜˜˜˜˜")]
+        [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½")]
         [SerializeField] private FishingSpotData currentSpot;
-        [SerializeField] private FishData currentFishData; // ˜˜˜˜˜˜˜ ˜˜˜˜ (˜˜ ˜˜˜˜˜˜˜)
-        public IFishable CurrentFish { get; private set; } // ˜˜˜˜˜˜˜˜˜ ˜˜˜˜ ˜ ˜˜˜
+        [SerializeField] private FishData currentFishData; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+        public IFishable CurrentFish { get; private set; } // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ ï¿½ï¿½ï¿½
 
-        public event Action<FishData> OnFishHooked;   // ˜˜˜˜˜˜˜ ˜˜˜ UI/˜˜˜˜˜
+        public event Action<FishData> OnFishHooked;   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ UI/ï¿½ï¿½ï¿½ï¿½ï¿½
         public event Action<FishData> OnFishLanded;
         public event Action OnFishEscaped;
         private bool isFishingInProgress;
@@ -40,26 +40,26 @@ namespace Fishing.Core
 
         private void Start()
         {
-            // ˜˜˜˜˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             castingSystem.Initialize(this);
             biteSystem.Initialize(this);
             reelingSystem.Initialize(this);
         }
 
         /// <summary>
-        /// ˜˜˜˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜ ˜ ˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜.
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½.
         /// </summary>
         public void PerformCast(Vector3 targetPosition, FishingSpotData spot)
         {
             if (isFishingInProgress)
             {
-                Debug.LogWarning("˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜!");
+                Debug.LogWarning("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½!");
                 return;
             }
 
             if (spot == null)
             {
-                Debug.LogError("˜˜˜ ˜˜˜˜˜˜˜ ˜˜ ˜˜˜˜˜˜˜ FishingSpotData!");
+                Debug.LogError("ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ FishingSpotData!");
                 return;
             }
 
@@ -69,20 +69,20 @@ namespace Fishing.Core
         }
 
         /// <summary>
-        /// ˜˜˜˜˜˜ ˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜ (˜˜˜˜˜ ˜˜˜˜˜ ˜ ˜˜˜˜).
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½).
         /// </summary>
         private void OnCastComplete()
         {
-            Debug.Log("˜˜˜˜˜ ˜ ˜˜˜˜. ˜˜˜ ˜˜˜˜˜˜˜...");
+            Debug.Log("ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½. ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½...");
             biteSystem.StartWaiting(currentSpot);
         }
 
         /// <summary>
-        /// ˜˜˜˜˜˜˜˜˜˜ ˜˜ BiteSystem ˜˜˜ ˜˜˜˜˜˜˜.
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ BiteSystem ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
         /// </summary>
         public void OnBiteOccurred(FishData fishData)
         {
-            // ˜˜˜˜˜˜ ˜˜ ˜˜˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜ ˜˜˜˜˜ ˜˜˜˜˜˜.
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
             if (!isFishingInProgress || fishData == null)
                 return;
 
@@ -95,7 +95,7 @@ namespace Fishing.Core
         }
 
         /// <summary>
-        /// ˜˜˜˜˜˜˜˜˜˜ ˜˜ ReelingSystem, ˜˜˜˜˜ ˜˜˜˜ ˜˜˜˜˜˜˜˜.
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ReelingSystem, ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
         /// </summary>
         public void OnFishTired()
         {
@@ -105,10 +105,10 @@ namespace Fishing.Core
             CurrentFish.State = FishState.Landed;
             FishData landedFish = currentFishData;
 
-            Debug.Log($"˜˜˜˜ {landedFish.fishName} ˜˜˜˜˜˜˜!");
+            Debug.Log($"ï¿½ï¿½ï¿½ï¿½ {landedFish.fishName} ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½!");
 
-            // ˜˜˜˜˜ ˜˜˜˜˜ ˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜ ˜˜˜˜-˜˜˜˜
-            // ... ˜˜˜ ˜˜˜ ˜˜˜ ˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜ ˜˜˜˜-˜˜˜˜ ...
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½-ï¿½ï¿½ï¿½ï¿½
+            // ... ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½-ï¿½ï¿½ï¿½ï¿½ ...
             ResetFishingSystems();
             OnFishLanded?.Invoke(landedFish);
         }
@@ -121,7 +121,7 @@ namespace Fishing.Core
             CurrentFish?.OnEscape();
             ResetFishingSystems();
             OnFishEscaped?.Invoke();
-            Debug.Log("˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜ ˜˜˜ ˜˜˜˜˜.");
+            Debug.Log("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½.");
         }
 
         private void ResetFishingSystems()
@@ -136,7 +136,7 @@ namespace Fishing.Core
             isFishingInProgress = false;
         }
 
-        // ˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜ IFishable ˜˜ ˜˜˜˜˜˜ FishData
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ IFishable ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ FishData
         private class FishInstance : IFishable
         {
             private FishData data;
@@ -159,7 +159,7 @@ namespace Fishing.Core
 
             public bool ApplyTension(float tensionPower)
             {
-                // ReelingSystem ˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜ ˜˜˜˜ ˜˜˜˜˜˜ ˜ ˜˜˜˜˜˜ ˜˜˜˜.
+                // ReelingSystem ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
                 if (tensionPower > 0f)
                     currentTiredness += Time.deltaTime * data.escapeSpeed;
                 else

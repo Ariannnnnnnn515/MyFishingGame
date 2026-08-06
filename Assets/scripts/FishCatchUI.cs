@@ -1,74 +1,196 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro; // Если используете TextMeshPro
+using TMPro;
+using System.Collections;
 
-// Это упрощенная модель вашего конфига. У вас может быть свой класс.
-// Главное, чтобы в нем были поля для имени, веса и спрайта/префаба.
 [System.Serializable]
 public class FishConfig
 {
     public string fishName;
     public float fishWeight;
-    public Sprite fishSprite; // Или GameObject fishPrefab для 3D
-    // ... другие ваши поля
+    public GameObject fishPrefab;  // 3D-модель рыбы
 }
 
 public class FishCatchUI : MonoBehaviour
 {
     [Header("UI Elements")]
-    [SerializeField] private Image fishImage;       // Ссылка на компонент Image для рыбы
-    [SerializeField] private TMP_Text nameText;      // Ссылка на TextMeshPro
-    [SerializeField] private TMP_Text weightText;    // Ссылка на TextMeshPro
-    [SerializeField] private Button keepButton;      // Ссылка на кнопку "В садок"
-    [SerializeField] private Button releaseButton;   // Ссылка на кнопку "Отпустить"
+    [SerializeField] private TMP_Text nameText;
+    [SerializeField] private TMP_Text weightText;
+    [SerializeField] private Button keepButton;
+    [SerializeField] private Button releaseButton;
 
-    // Этот метод будет вызван из вашего основного скрипта рыбалки,
-    // когда рыба будет выужена.
-    public void ShowCatchResult(FishConfig caughtFish)
+    [Header("3D Model Settings")]
+    [SerializeField] private float spawnDistance = 3f;  // Расстояние от камеры
+    [SerializeField] private Vector3 modelOffset = new Vector3(0, -0.5f, 0); // Смещение модели
+    [SerializeField] private Vector3 modelRotation = new Vector3(0, 180, 0); // Поворот модели (чтобы смотрела на игрока)
+    [SerializeField] private Vector3 modelScale = Vector3.one * 1.5f;
+
+    private GameObject currentFishModel;  // Ссылка на созданную модель
+    private FishConfig currentCaughtFish; // Данные о пойманной рыбе
+    private Camera playerCamera;          // Главная камера игрока
+
+    private void Awake()
     {
-        // 1. Заполняем UI данными из конфига
-        if (caughtFish != null)
+        // Находим главную камеру
+        playerCamera = Camera.main;
+        if (playerCamera == null)
         {
-            // Устанавливаем спрайт рыбы
-            if (fishImage != null && caughtFish.fishSprite != null)
-            {
-                fishImage.sprite = caughtFish.fishSprite;
-                fishImage.gameObject.SetActive(true); // Убеждаемся, что изображение активно
-            }
-            else
-            {
-                // Если спрайта нет, скрываем изображение, чтобы не было пустоты
-                if (fishImage != null) fishImage.gameObject.SetActive(false);
-            }
-
-            // Устанавливаем имя и вес
-            if (nameText != null) nameText.text = caughtFish.fishName;
-            if (weightText != null) weightText.text = $"Вес: {caughtFish.fishWeight:F2} кг."; // Форматируем вес
+            Debug.LogError("Не найдена камера с тегом MainCamera!");
         }
 
-        // 2. Активируем панель
-        this.gameObject.SetActive(true);
+        // Изначально панель выключена
+        this.gameObject.SetActive(false);
     }
 
-    // Этот метод вызывается кнопкой "В садок"
+    /// <summary>
+    /// Показывает результат поимки рыбы
+    /// </summary>
+    public void ShowCatchResult(FishConfig caughtFish)
+    {
+        currentCaughtFish = caughtFish;
+
+        if (caughtFish != null)
+        {
+            // Заполняем текстовую информацию
+            if (nameText != null)
+                nameText.text = caughtFish.fishName;
+            if (weightText != null)
+                weightText.text = $"Вес: {caughtFish.fishWeight:F2} кг.";
+        }
+        else
+        {
+            Debug.LogError("FishCatchUI: Передан пустой конфиг рыбы!");
+            return;
+        }
+
+        // Создаём 3D-модель перед камерой
+        SpawnFishModel(caughtFish.fishPrefab);
+
+        // Активируем курсор для взаимодействия с кнопками
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        // Показываем панель
+        this.gameObject.SetActive(true);
+
+        // Опционально: замедляем или останавливаем время
+        // Time.timeScale = 0f;
+    }
+
+    /// <summary>
+    /// Создаёт 3D-модель рыбы перед камерой игрока
+    /// </summary>
+    private void SpawnFishModel(GameObject fishPrefab)
+    {
+        // Удаляем старую модель, если она есть
+        if (currentFishModel != null)
+        {
+            Destroy(currentFishModel);
+            currentFishModel = null;
+        }
+
+        if (fishPrefab == null)
+        {
+            Debug.LogWarning("Префаб рыбы не назначен в конфиге!");
+            return;
+        }
+
+        if (playerCamera == null)
+        {
+            Debug.LogError("Камера игрока не найдена!");
+            return;
+        }
+
+        // Вычисляем позицию перед камерой
+        Vector3 spawnPosition = playerCamera.transform.position + 
+                                playerCamera.transform.forward * spawnDistance + 
+                                modelOffset;
+
+        // Создаём модель
+        currentFishModel = Instantiate(fishPrefab, spawnPosition, Quaternion.identity);
+
+        // Поворачиваем модель к камере (чтобы игрок видел её спереди)
+        currentFishModel.transform.LookAt(playerCamera.transform);
+        currentFishModel.transform.Rotate(modelRotation);
+
+        // Устанавливаем масштаб
+        currentFishModel.transform.localScale = modelScale;
+
+        // Добавляем эффект вращения для красоты
+        StartCoroutine(RotateFishModel());
+    }
+
+    /// <summary>
+    /// Корутина для плавного вращения модели
+    /// </summary>
+    private IEnumerator RotateFishModel()
+    {
+        float rotationSpeed = 20f;
+        while (currentFishModel != null && this.gameObject.activeSelf)
+        {
+            currentFishModel.transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime);
+            yield return null;
+        }
+    }
+
+    /// <summary>
+    /// Обработчик кнопки "В садок"
+    /// </summary>
     public void OnKeepButtonClick()
     {
-        Debug.Log("Рыба помещена в садок!");
-        // --- ВАЖНО: Здесь будет ваша логика добавления рыбы в садок/инвентарь ---
-        // Например: InventoryManager.Instance.AddFish(currentFishData);
-        
-        // Закрываем панель
+        if (currentCaughtFish == null) return;
+
+        Debug.Log($"Рыба '{currentCaughtFish.fishName}' помещена в садок!");
+        // TODO: Здесь будет ваша логика сохранения рыбы
+
+        ClosePanel();
+    }
+
+    /// <summary>
+    /// Обработчик кнопки "Отпустить"
+    /// </summary>
+    public void OnReleaseButtonClick()
+    {
+        if (currentCaughtFish == null) return;
+
+        Debug.Log($"Рыба '{currentCaughtFish.fishName}' отпущена на волю!");
+        // TODO: Здесь может быть анимация уплывания
+
+        ClosePanel();
+    }
+
+    /// <summary>
+    /// Закрывает панель и очищает ресурсы
+    /// </summary>
+    private void ClosePanel()
+    {
+        // Удаляем модель
+        if (currentFishModel != null)
+        {
+            Destroy(currentFishModel);
+            currentFishModel = null;
+        }
+
+        // Возвращаем курсор в обычный режим
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        // Возвращаем время, если останавливали
+        // Time.timeScale = 1f;
+
+        // Выключаем панель
         this.gameObject.SetActive(false);
     }
 
-    // Этот метод вызывается кнопкой "Отпустить"
-    public void OnReleaseButtonClick()
+    /// <summary>
+    /// При выключении панели очищаем модель
+    /// </summary>
+    private void OnDisable()
     {
-        Debug.Log("Рыба отпущена!");
-        // --- ВАЖНО: Здесь будет ваша логика отпускания рыбы ---
-        // Можно ничего не делать, просто закрыть панель, или добавить анимацию уплывания.
-
-        // Закрываем панель
-        this.gameObject.SetActive(false);
+        if (currentFishModel != null)
+        {
+            Destroy(currentFishModel);
+            currentFishModel = null;
+        }
     }
 }
