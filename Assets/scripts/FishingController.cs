@@ -105,6 +105,9 @@ namespace Fishing.Core
             FishData landedFish = currentFishData;
 
             Debug.Log($"Рыба {landedFish.fishName} поймана!");
+
+            // После этого можно остановить мини-игру
+            // ... ваш код для сброса состояния мини-игры ...
             ResetFishingSystems();
             OnFishLanded?.Invoke(landedFish);
         }

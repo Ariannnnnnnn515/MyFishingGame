@@ -25,5 +25,7 @@ namespace Fishing.Core.Data
 
         [Header("Награда")]
         public int experienceReward = 10;
+        internal Sprite sprite;
+        internal object weight;
     }
 }
