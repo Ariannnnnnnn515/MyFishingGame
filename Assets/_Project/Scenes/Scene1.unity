@@ -1842,6 +1842,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   toggle: {fileID: 4324516031225502954, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   root: {fileID: 1486931228}
+  fishCatchUI: {fileID: 1698955303}
 --- !u!114 &636931636
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5324,6 +5325,7 @@ MonoBehaviour:
   modelOffset: {x: 0, y: -0.5, z: 0}
   modelRotation: {x: 0, y: 180, z: 0}
   modelScale: {x: 1.5, y: 1.5, z: 1.5}
+  pauseMenuRoot: {fileID: 636931634}
 --- !u!1001 &1735907987
 PrefabInstance:
   m_ObjectHideFlags: 0
