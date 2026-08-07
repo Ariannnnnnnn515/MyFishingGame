@@ -18,6 +18,8 @@ MonoBehaviour:
     spawnWeight: 100
   - fishData: {fileID: 11400000, guid: b8f673b05fa3c724888fdc0a5a453074, type: 2}
     spawnWeight: 80
+  - fishData: {fileID: 11400000, guid: 19a0a68af9437d24ea94b413d42f2e2e, type: 2}
+    spawnWeight: 10
   biteChanceModifier: 1
   rippleEffect: {fileID: 0}
   waterSplash: {fileID: 0}

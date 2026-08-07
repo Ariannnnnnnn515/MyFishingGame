@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5e6ce9dbd742f6c4bad291840c25e3df, type: 3}
-  m_Name: "\u041A\u0430\u0440\u0430\u0441\u044C"
+  m_Name: "\u041A\u0430\u0440\u043F \u043A\u043E\u0438"
   m_EditorClassIdentifier: 
-  fishName: "\u041A\u0430\u0440\u0430\u0441\u044C"
-  weightMin: 0.1
-  weightMax: 2.7
-  baseResistance: 0.5
-  escapeSpeed: 0.27
-  fishPrefab: {fileID: 8264218793534278510, guid: 5caeff36034ffba4ea451e4904348494, type: 3}
+  fishName: "\u041A\u0430\u0440\u043F \u043A\u043E\u0438"
+  weightMin: 1.5
+  weightMax: 25
+  baseResistance: 1.8
+  escapeSpeed: 0.15
+  fishPrefab: {fileID: 1809855982420343196, guid: a20ffe8d10c78534cafd817b38517e05, type: 3}
   iconInUI: {fileID: 0}
-  experienceReward: 10
+  experienceReward: 500
