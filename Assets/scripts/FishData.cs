@@ -27,5 +27,8 @@ namespace Fishing.Core.Data
         public int experienceReward = 10;
         internal Sprite sprite;
         internal object weight;
+
+        [Header("Ёкономика")]
+        [Min(1)] public int pricePerKilogram = 20;
     }
 }

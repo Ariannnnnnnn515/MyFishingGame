@@ -15,9 +15,9 @@ MonoBehaviour:
   spotName: "\u041B\u0435\u0441\u043D\u043E\u0435 \u043E\u0437\u0435\u0440\u043E"
   fishPool:
   - fishData: {fileID: 11400000, guid: ee842e76db943294d8ab5321b736614b, type: 2}
-    spawnWeight: 100
+    spawnWeight: 60
   - fishData: {fileID: 11400000, guid: b8f673b05fa3c724888fdc0a5a453074, type: 2}
-    spawnWeight: 80
+    spawnWeight: 30
   - fishData: {fileID: 11400000, guid: 19a0a68af9437d24ea94b413d42f2e2e, type: 2}
     spawnWeight: 10
   biteChanceModifier: 1

@@ -20,3 +20,4 @@ MonoBehaviour:
   fishPrefab: {fileID: 8264218793534278510, guid: 5caeff36034ffba4ea451e4904348494, type: 3}
   iconInUI: {fileID: 0}
   experienceReward: 10
+  pricePerKilogram: 20

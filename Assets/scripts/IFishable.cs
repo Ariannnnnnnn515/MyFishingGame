@@ -15,6 +15,8 @@ namespace Fishing.Core.Interfaces
 
         /// <summary> Сопротивление при вываживании (0-1) </summary>
         float CurrentResistance { get; }
+        /// <summary> Вес конкретной пойманной рыбы </summary>
+        float Weight { get; }
 
         /// <summary> Вызывается при засечке </summary>
         void OnHooked();

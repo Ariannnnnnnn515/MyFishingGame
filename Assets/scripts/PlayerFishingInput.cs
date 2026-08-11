@@ -15,6 +15,9 @@ public class PlayerFishingInput : MonoBehaviour
     [Header("Интерфейс")]
     [SerializeField] private TMP_Text statusText;
 
+    [Header("Экономика")]
+    [SerializeField] private FishInventory fishInventory;
+
     private FishingController fishingController;
     private bool isFishingActive;
     private FishData currentFishData; // Сохраняем данные о пойманной рыбе
@@ -104,19 +107,17 @@ public class PlayerFishingInput : MonoBehaviour
         ShowStatus($"Поклёвка! {fish.fishName} на крючке!");
     }
 
-    private void OnFishLanded(FishData fish)
+    private void OnFishLanded(FishData fish, float weight)
     {
-        float weight = Random.Range(fish.weightMin, fish.weightMax);
         isFishingActive = false;
 
-        // Сохраняем окончательные данные
-        currentFishData = fish;
+        if (fishInventory != null)
+            fishInventory.AddFish(fish, weight);
+        else
+            Debug.LogError("В PlayerFishingInput не назначен FishInventory!");
 
-        // Показываем статус
         ShowStatus($"Поймана рыба: {fish.fishName}, {weight:F1} кг!");
-
-        // ВЫЗЫВАЕМ МЕТОД ДЛЯ ПОКАЗА UI С РЫБОЙ
-        OnFishCaught(currentFishData);
+        OnFishCaught(fish);
     }
 
     private void OnFishEscaped()
