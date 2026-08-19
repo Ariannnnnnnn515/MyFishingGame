@@ -19,6 +19,11 @@ namespace Fishing.Systems
         private Coroutine waitingCoroutine;
         private FishingSpotData currentSpot;
 
+        [Header("Наживка")]
+        [SerializeField] private BaitInventory baitInventory;
+
+        private float currentBaitModifier = 1f;
+
         public void Initialize(FishingController controller) => this.controller = controller;
 
         /// <summary>
@@ -27,7 +32,13 @@ namespace Fishing.Systems
         public void StartWaiting(FishingSpotData spot)
         {
             currentSpot = spot;
-            if (waitingCoroutine != null) StopCoroutine(waitingCoroutine);
+            currentBaitModifier = baitInventory != null
+                ? baitInventory.UseBait()
+                : 1f;
+
+            if (waitingCoroutine != null)
+                StopCoroutine(waitingCoroutine);
+
             waitingCoroutine = StartCoroutine(WaitForBite());
         }
 
@@ -35,7 +46,10 @@ namespace Fishing.Systems
         {
             while (currentSpot != null)
             {
-                float modifier = Mathf.Max(0.1f, currentSpot.biteChanceModifier);
+                float modifier = Mathf.Max(
+    0.1f,
+    currentSpot.biteChanceModifier * currentBaitModifier
+);
                 float waitTime = Random.Range(minWaitTime, maxWaitTime) / modifier;
                 yield return new WaitForSeconds(waitTime);
 
@@ -90,7 +104,7 @@ namespace Fishing.Systems
                 waitingCoroutine = null;
             }
 
-            currentSpot = null;
+            currentSpot = null; currentBaitModifier = 1f;
         }
     }
 }
