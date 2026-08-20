@@ -3,7 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using Fishing.Core.Data;
 
+private const string InventoryKey = "FishingGame.Inventory";
+
 [Serializable]
+private class InventorySaveData
+{
+    public List<CaughtFish> fish = new List<CaughtFish>();
+}
+
 public class CaughtFish
 {
     public string fishName;
