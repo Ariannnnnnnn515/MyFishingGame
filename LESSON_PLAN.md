@@ -1265,7 +1265,927 @@ public void BackToMainMenu()
 - В `PauseUI.BackToMainMenu` должна быть строка `Time.timeScale = 1f;`.
 - В `MainMenuUI.StartGame` тоже должна быть страховочная строка `Time.timeScale = 1f;`.
 
-# Часть 2. Экономика и магазин
+# Актуальный аудит проекта — 25 августа 2026 года
+
+Оценка сделана по скриптам, ассетам, префабам и сериализованным ссылкам `Scene1`. Она не заменяет проверку в Play Mode.
+
+| Часть проекта | Готовность | Что найдено |
+|---|---:|---|
+| Базовая рыбалка | около 85% | Есть заброс, поклёвка, вываживание, улов, срыв и общий сброс систем |
+| Меню и пауза | около 80% | Переходы работают по коду, но связь паузы с экраном улова не назначена |
+| Чистка сцены | около 65% | Создано много префабов, но в `Scene1` остаётся 37 корневых объектов без группировки |
+| Контент рыб | около 80% | Есть карась, окунь и карп кои, модели и таблица вероятностей |
+| Экран улова | около 55% | Есть 3D-модель и кнопки, но решения игрока пока ничего не меняют |
+| Инвентарь и магазин | около 10% | Визуальный `shopUI` есть, игровой логики ещё нет |
+| Сохранение | 0% | Для MVP не требуется |
+
+Общая готовность текущего MVP: примерно **60%**.
+
+## Что уже сделано хорошо
+
+- `Player`, `FishingController`, `BiteSystem`, `ReelingSystem`, HUD, пауза, магазин и удочка вынесены в префабы.
+- Ссылки `FishingController → CastingSystem / BiteSystem / ReelingSystem` назначены overrides в `Scene1`.
+- Ссылки `ReelingSystem → ReelingPanel / Slider / HintText` назначены.
+- `PlayerFishingInput` подписывается на события после получения `FishingController.Instance`.
+- Завершение рыбалки останавливает корутину, мини-игру и леску.
+- В `Лесное озеро` уже находятся три вида рыб.
+- Префаб результата содержит рабочие события кнопок `OnKeepButtonClick` и `OnReleaseButtonClick`.
+
+## Что мешает считать игру MVP
+
+1. Вес одной рыбы создаётся несколько раз:
+   - один раз для сопротивления;
+   - второй раз для сообщения;
+   - третий раз для экрана улова.
+2. Кнопки «В садок» и «Отпустить» отличаются только текстом в Console.
+3. Пока открыт экран улова, `PlayerFishingInput` всё ещё может начать новый заброс.
+4. `PauseUI` не получил ссылку `fishCatchUI`, поэтому паузу можно открыть поверх результата.
+5. `FishCatchUI.nameText` в сцене ссылается на внешний `StatusText`, а не на собственный текст префаба.
+6. В `FishData` остались лишние неиспользуемые поля `sprite` и `weight`.
+7. Русские комментарии части скриптов всё ещё отображаются в неправильной кодировке.
+8. Магазин визуально существует, но рыбу нельзя сохранить, продать или обменять на полезный товар.
+
+## Определение готового MVP
+
+За следующие пять занятий нужно получить один короткий, но полностью работающий цикл:
+
+```text
+Главное меню
+    ↓
+Заброс и вываживание
+    ↓
+Один точный экземпляр пойманной рыбы
+    ↓
+«В садок» или «Отпустить»
+    ↓
+Продажа рыбы за монеты
+    ↓
+Покупка теста
+    ↓
+Тесто ускоряет следующую поклёвку
+```
+
+В MVP не входят сохранение между запусками, задания, уровни, улучшения удочки, несколько магазинов и новые локации.
+
+---
+
+# Занятие 6. Завершаем чистку сцены и проверяем префабы
+
+## Цель
+
+Закончить уже начатую чистку, не потерять ссылки между префабами и получить устойчивую основу для игровой логики.
+
+## Результат занятия
+
+- Корень `Scene1` содержит пять понятных групп.
+- Лишние объекты удалены только после проверки.
+- В сцене одна камера и один `EventSystem`.
+- Все overrides систем проверены.
+- Экран улова использует собственный текст.
+- Полный цикл рыбалки проходит после рефакторинга.
+
+## 0–8 минут. Фиксируем рабочую версию
+
+1. Открой `Scene1` и один раз пройди цикл «заброс → поклёвка → улов».
+2. Очисти Console и убедись, что нет красных ошибок.
+3. Сделай Git-коммит с понятным названием, например `Перед завершением чистки Scene1`.
+4. Не начинай перестройку Hierarchy, если базовая рыбалка уже не работает.
+
+## 8–22 минуты. Собираем корневые группы
+
+Сейчас в сцене около 37 корневых объектов. Создай пустые объекты в позиции `(0, 0, 0)`:
+
+```text
+WORLD
+GAMEPLAY
+SYSTEMS
+UI
+LIGHTING
+```
+
+Распредели объекты:
+
+| Группа | Объекты |
+|---|---|
+| `WORLD` | земля, вода, деревья, камни, палатки, фонари и декорации |
+| `GAMEPLAY` | `Player`, удочка и будущая точка магазина |
+| `SYSTEMS` | `FishingController`, `BiteSystem`, `ReelingSystem` и `EventSystem` |
+| `UI` | `FishingHUD`, `PrefabUI`, `PauseUI`, `shopUI` |
+| `LIGHTING` | Directional Light и Global Volume |
+
+После каждого большого перемещения нажимай **Play** на 20–30 секунд и проверяй камеру, воду и UI.
+
+## 22–32 минуты. Что не нужно превращать в отдельный префаб
+
+Не всё в сцене обязано быть префабом.
+
+- Отдельные префабы `FishingController`, `BiteSystem` и `ReelingSystem` имеют пустые ссылки внутри самих prefab assets.
+- Правильные ссылки сейчас хранятся в overrides экземпляров `Scene1`.
+- Это допустимо для MVP, но нельзя нажимать **Apply All** вслепую: ссылка на другой объект сцены не сохранится в отдельном префабе.
+- Не удаляй рабочие экземпляры систем ради «идеально синего» Inspector.
+
+На экземпляре `FishingController` проверь:
+
+- `Casting System` назначен;
+- `Bite System` назначен;
+- `Reeling System` назначен;
+- `Current Spot` ссылается на `Лесное озеро`.
+
+На экземпляре `ReelingSystem` проверь `Reeling UI`, `Tension Slider` и `Hint Text`.
+
+## 32–43 минуты. Исправляем префаб результата
+
+1. Открой `Assets/_Project/UI/PrefabUI.prefab` в Prefab Mode.
+2. Создай или найди TMP-текст для имени и веса.
+3. Назови его `CatchResultText`.
+4. Перетащи его в поле `Name Text` компонента `FishCatchUI`.
+5. Поле `Weight Text` можно оставить пустым: текущий код показывает имя и вес в одном тексте.
+6. Проверь, что кнопки префаба вызывают:
+   - `FishCatchUI.OnKeepButtonClick`;
+   - `FishCatchUI.OnReleaseButtonClick`.
+7. Сохрани префаб и выйди из Prefab Mode.
+8. В `Scene1` удали override, который назначает в `nameText` внешний `StatusText`.
+
+Теперь префаб результата является самостоятельным и не забирает текст у обычного HUD.
+
+## 43–50 минут. Исправляем взаимодействие с паузой
+
+1. Выбери экземпляр `PauseUI` в `Scene1`.
+2. В поле `Fish Catch UI` перетащи компонент `FishCatchUI` из `PrefabUI`.
+3. Не применяй эту ссылку к prefab asset: это связь между двумя экземплярами сцены.
+4. Запусти игру, поймай рыбу и нажми `Esc`.
+5. Пауза не должна открываться поверх экрана результата.
+
+## 50–57 минут. Удаляем лишнее безопасно
+
+Для каждого подозрительного объекта:
+
+1. выключи его;
+2. проверь движение, заброс, вываживание, результат и паузу;
+3. проверь Console;
+4. только потом удали;
+5. снова сохрани сцену.
+
+Особенно проверь дубли Main Camera, EventSystem, старые Canvas и тестовые объекты из импортированных демо-сцен.
+
+## 57–60 минут. Контрольная точка
+
+- Почему сценовая ссылка хранится override, но не внутри отдельного prefab asset?
+- В каких случаях объект лучше оставить обычным объектом сцены?
+- Почему удаление начинается с временного выключения?
+
+Мини-задание: сфотографируй или сохрани скриншот чистой Hierarchy и объясни назначение каждой из пяти групп.
+
+---
+
+# Занятие 7. Один экземпляр рыбы — один вес
+
+## Цель
+
+Убрать три случайных веса, передавать один объект улова через всю игру и запретить ввод, пока игрок выбирает судьбу рыбы.
+
+## Результат занятия
+
+- Вес создаётся один раз в `FishInstance`.
+- Сопротивление, сообщение и экран результата используют одинаковый вес.
+- Новый заброс невозможен при открытом результате.
+- `FishCatchUI` принимает готовый объект `CaughtFish`.
+
+## 0–10 минут. Создаём CaughtFish.cs
+
+Создай `Assets/_Project/Scripts/CaughtFish.cs`:
+
+```csharp
+using System;
+using UnityEngine;
+using Fishing.Core.Data;
+
+[Serializable]
+public class CaughtFish
+{
+    public FishData fishData;
+    public float weight;
+
+    public string FishName => fishData != null
+        ? fishData.fishName
+        : "Неизвестная рыба";
+
+    public GameObject FishPrefab => fishData != null
+        ? fishData.fishPrefab
+        : null;
+
+    public CaughtFish(FishData data, float caughtWeight)
+    {
+        fishData = data;
+        weight = caughtWeight;
+    }
+}
+```
+
+Это не описание целого вида. Это конкретная пойманная рыба с конкретным весом.
+
+## 10–20 минут. Добавляем вес в IFishable
+
+В `IFishable.cs` после `CurrentResistance` добавь:
+
+```csharp
+/// <summary> Вес конкретной рыбы </summary>
+float Weight { get; }
+```
+
+Внутри `FishInstance` в `FishingController.cs` добавь:
+
+```csharp
+public float Weight { get; }
+```
+
+Замени конструктор:
+
+```csharp
+public FishInstance(FishData data)
+{
+    this.data = data;
+    Weight = UnityEngine.Random.Range(data.weightMin, data.weightMax);
+    maxResistance = data.baseResistance * Weight;
+    State = FishState.Hooked;
+}
+```
+
+Больше нигде новый вес для этой рыбы генерировать нельзя.
+
+## 20–32 минуты. Меняем событие улова
+
+В `FishingController` замени:
+
+```csharp
+public event Action<FishData> OnFishLanded;
+```
+
+на:
+
+```csharp
+public event Action<CaughtFish> OnFishLanded;
+```
+
+Замени `OnFishTired`:
+
+```csharp
+public void OnFishTired()
+{
+    if (CurrentFish == null || currentFishData == null)
+        return;
+
+    CurrentFish.State = FishState.Landed;
+
+    CaughtFish result = new CaughtFish(
+        currentFishData,
+        CurrentFish.Weight
+    );
+
+    Debug.Log($"Поймана рыба: {result.FishName}, {result.weight:F1} кг");
+    ResetFishingSystems();
+    OnFishLanded?.Invoke(result);
+}
+```
+
+Сначала создаётся `result`, затем контроллер очищает текущую рыбалку. Поэтому данные не пропадают после `ResetFishingSystems`.
+
+## 32–45 минут. Упрощаем PlayerFishingInput
+
+Удаляем из `PlayerFishingInput`:
+
+- поле `currentFishData`;
+- случайный `Random.Range` из `OnFishLanded`;
+- обе перегрузки `OnFishCaught`;
+- конвертацию в `FishConfig`.
+
+Новый обработчик:
+
+```csharp
+private void OnFishLanded(CaughtFish fish)
+{
+    isFishingActive = false;
+    ShowStatus($"Поймана рыба: {fish.FishName}, {fish.weight:F1} кг!");
+
+    if (catchUI != null)
+        catchUI.ShowCatchResult(fish);
+    else
+        Debug.LogError("FishCatchUI не назначен!");
+}
+```
+
+В самое начало `Update` добавь:
+
+```csharp
+if (catchUI != null && catchUI.IsOpen)
+    return;
+```
+
+Теперь ПКМ не запустит новую рыбалку поверх результата.
+
+## 45–53 минуты. Переводим FishCatchUI на CaughtFish
+
+1. Удали класс `FishConfig` из начала `FishCatchUI.cs`.
+2. Замени поле:
+
+```csharp
+private CaughtFish currentCaughtFish;
+```
+
+3. Добавь свойство:
+
+```csharp
+public bool IsOpen => gameObject.activeSelf;
+```
+
+4. Замени сигнатуру:
+
+```csharp
+public void ShowCatchResult(CaughtFish caughtFish)
+```
+
+5. Для текста используй:
+
+```csharp
+nameText.text =
+    $"{caughtFish.FishName}\n{caughtFish.weight:F2} кг";
+```
+
+6. Модель создавай так:
+
+```csharp
+SpawnFishModel(caughtFish.FishPrefab);
+```
+
+7. В `ClosePanel` после уничтожения модели добавь:
+
+```csharp
+currentCaughtFish = null;
+```
+
+## 53–58 минут. Чистим FishData
+
+В конце `FishData.cs` удали:
+
+```csharp
+internal Sprite sprite;
+internal object weight;
+```
+
+Эти поля не видны в Inspector, не используются и создают ложное впечатление, что вес хранится в данных вида.
+
+## 58–60 минут. Контрольная точка
+
+Поймай одну рыбу и сравни число:
+
+- в Console;
+- в `StatusText`;
+- в `CatchResultText`.
+
+Все три значения должны совпадать. Затем нажми ПКМ при открытом результате: новый заброс не должен начаться.
+
+---
+
+# Занятие 8. Кнопки «В садок» и «Отпустить»
+
+## Цель
+
+Сделать решение после улова настоящей игровой механикой и добавить минимальный инвентарь текущей сессии.
+
+## Результат занятия
+
+- «В садок» добавляет ровно одну рыбу.
+- «Отпустить» не меняет инвентарь.
+- HUD показывает количество и стоимость улова.
+- Повторное нажатие не дублирует рыбу.
+
+## 0–8 минут. Добавляем цену виду рыбы
+
+В `FishData.cs` добавь:
+
+```csharp
+[Header("Экономика MVP")]
+[Min(1)] public int pricePerKilogram = 20;
+```
+
+Настрой ассеты:
+
+| Рыба | Цена за килограмм |
+|---|---:|
+| Карась | 20 |
+| Окунь | 35 |
+| Карп кои | 70 |
+
+В `CaughtFish` добавь:
+
+```csharp
+public int SellPrice => fishData == null
+    ? 0
+    : Mathf.Max(1, Mathf.RoundToInt(weight * fishData.pricePerKilogram));
+```
+
+## 8–25 минут. Создаём FishInventory.cs
+
+Создай `Assets/_Project/Scripts/FishInventory.cs`:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+
+public class FishInventory : MonoBehaviour
+{
+    [SerializeField] private TMP_Text inventoryText;
+    [SerializeField] private List<CaughtFish> fish = new List<CaughtFish>();
+
+    public event Action OnInventoryChanged;
+
+    public int Count => fish.Count;
+
+    public int TotalValue
+    {
+        get
+        {
+            int total = 0;
+
+            foreach (CaughtFish caughtFish in fish)
+                total += caughtFish.SellPrice;
+
+            return total;
+        }
+    }
+
+    private void Start()
+    {
+        RefreshUI();
+    }
+
+    public void Add(CaughtFish caughtFish)
+    {
+        if (caughtFish == null)
+            return;
+
+        fish.Add(caughtFish);
+        RefreshUI();
+        OnInventoryChanged?.Invoke();
+    }
+
+    public int SellAll()
+    {
+        int money = TotalValue;
+        fish.Clear();
+        RefreshUI();
+        OnInventoryChanged?.Invoke();
+        return money;
+    }
+
+    private void RefreshUI()
+    {
+        if (inventoryText != null)
+        {
+            inventoryText.text =
+                $"В садке: {Count}\n" +
+                $"Стоимость: {TotalValue}";
+        }
+    }
+}
+```
+
+Для MVP инвентарь хранится только до выхода из игры. Сохранение добавим после проверки ценности основного цикла.
+
+## 25–35 минут. Создаём PlayerData
+
+1. Под группой `GAMEPLAY` создай обычный пустой объект `PlayerData`.
+2. Добавь компонент `FishInventory`.
+3. В `FishingHUD` создай TMP-текст `InventoryText`.
+4. Размести его в правом верхнем углу.
+5. Перетащи его в поле `Inventory Text`.
+
+`PlayerData` пока не нужно превращать в префаб: он хранит ссылку на UI конкретной сцены.
+
+## 35–47 минут. Подключаем выбор игрока
+
+В `FishCatchUI` добавь:
+
+```csharp
+[Header("Результат улова")]
+[SerializeField] private FishInventory fishInventory;
+```
+
+Замени методы кнопок:
+
+```csharp
+public void OnKeepButtonClick()
+{
+    if (currentCaughtFish == null)
+        return;
+
+    if (fishInventory == null)
+    {
+        Debug.LogError("FishInventory не назначен!");
+        return;
+    }
+
+    fishInventory.Add(currentCaughtFish);
+    Debug.Log($"{currentCaughtFish.FishName} помещена в садок.");
+    ClosePanel();
+}
+
+public void OnReleaseButtonClick()
+{
+    if (currentCaughtFish == null)
+        return;
+
+    Debug.Log($"{currentCaughtFish.FishName} отпущена.");
+    ClosePanel();
+}
+```
+
+В `Scene1` назначь `PlayerData/FishInventory` в поле экземпляра `PrefabUI`. Не применяй сценовую ссылку к префабу.
+
+## 47–57 минут. Проверяем четыре сценария
+
+| Сценарий | Ожидаемый результат |
+|---|---|
+| Поймать и отпустить | количество не меняется |
+| Поймать и оставить | количество увеличивается на 1 |
+| Дважды нажать кнопку | рыба добавляется только один раз |
+| Поймать две разные рыбы | стоимость равна сумме двух цен |
+
+Если двойной клик успевает добавить рыбу дважды, в начале `OnKeepButtonClick` сохрани локальную ссылку, сразу обнули `currentCaughtFish`, затем добавляй локальную рыбу.
+
+## 57–60 минут. Контрольная точка
+
+- Почему `FishData` хранит цену за килограмм, а `CaughtFish` — итоговую стоимость?
+- Почему «Отпустить» не вызывает `FishInventory.Add`?
+- Почему сохранение пока не входит в MVP?
+
+Мини-задание: вручную рассчитай цену карпа кои весом 4.2 кг и сравни с HUD.
+
+---
+
+# Занятие 9. Продажа улова и монеты
+
+## Цель
+
+Оживить существующий `shopUI`: открыть магазин, продать весь садок и получить монеты.
+
+## Результат занятия
+
+- У игрока есть кошелёк.
+- Магазин открывается и закрывается.
+- Продажа пустого садка ничего не даёт.
+- Продажа рыбы один раз добавляет точную стоимость.
+
+## 0–12 минут. Создаём PlayerWallet.cs
+
+Создай `Assets/_Project/Scripts/PlayerWallet.cs`:
+
+```csharp
+using System;
+using TMPro;
+using UnityEngine;
+
+public class PlayerWallet : MonoBehaviour
+{
+    [SerializeField] private TMP_Text coinsText;
+
+    public event Action OnCoinsChanged;
+    public int Coins { get; private set; }
+
+    private void Start()
+    {
+        RefreshUI();
+    }
+
+    public void AddCoins(int amount)
+    {
+        if (amount <= 0)
+            return;
+
+        Coins += amount;
+        RefreshUI();
+        OnCoinsChanged?.Invoke();
+    }
+
+    public bool TrySpend(int amount)
+    {
+        if (amount <= 0 || Coins < amount)
+            return false;
+
+        Coins -= amount;
+        RefreshUI();
+        OnCoinsChanged?.Invoke();
+        return true;
+    }
+
+    private void RefreshUI()
+    {
+        if (coinsText != null)
+            coinsText.text = $"Монеты: {Coins}";
+    }
+}
+```
+
+Добавь компонент на `PlayerData`.
+
+## 12–28 минут. Создаём ShopController.cs
+
+Создай `Assets/_Project/Scripts/ShopController.cs`:
+
+```csharp
+using TMPro;
+using UnityEngine;
+
+public class ShopController : MonoBehaviour
+{
+    [SerializeField] private FishInventory fishInventory;
+    [SerializeField] private PlayerWallet playerWallet;
+    [SerializeField] private GameObject shopRoot;
+    [SerializeField] private TMP_Text messageText;
+
+    public bool IsOpen => shopRoot != null && shopRoot.activeSelf;
+
+    private void Start()
+    {
+        shopRoot.SetActive(false);
+    }
+
+    public void Open()
+    {
+        shopRoot.SetActive(true);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        Time.timeScale = 0f;
+    }
+
+    public void Close()
+    {
+        shopRoot.SetActive(false);
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        Time.timeScale = 1f;
+    }
+
+    public void SellAllFish()
+    {
+        int fishCount = fishInventory.Count;
+        int money = fishInventory.SellAll();
+
+        if (money <= 0)
+        {
+            ShowMessage("Садок пуст.");
+            return;
+        }
+
+        playerWallet.AddCoins(money);
+        ShowMessage($"Продано рыб: {fishCount}. Получено: {money}.");
+    }
+
+    private void ShowMessage(string message)
+    {
+        Debug.Log(message);
+
+        if (messageText != null)
+            messageText.text = message;
+    }
+}
+```
+
+Размести `ShopController` на активном `PlayerData`, а не внутри выключенного `shopUI`.
+
+## 28–43 минут. Настраиваем существующий shopUI
+
+1. Помести экземпляр `shopUI` внутрь группы `UI`.
+2. Используй существующий `Balance` для отображения монет.
+3. Внутри магазина создай TMP-текст `ShopMessageText`.
+4. Создай кнопку `SellAllButton` с надписью «Продать весь улов».
+5. Используй существующую кнопку `Close` для закрытия.
+6. В `FishingHUD` создай кнопку `OpenShopButton`.
+7. Назначь в `PlayerData`:
+   - `Fish Inventory`;
+   - `Player Wallet`;
+   - `Shop Root`;
+   - `Message Text`.
+8. Назначь TMP-текст `Balance` в `PlayerWallet.Coins Text`.
+
+Кнопки:
+
+| Кнопка | Метод |
+|---|---|
+| `OpenShopButton` | `ShopController.Open` |
+| `Close` | `ShopController.Close` |
+| `SellAllButton` | `ShopController.SellAllFish` |
+
+## 43–50 минут. Блокируем конфликтующие действия
+
+Добавь ссылку `ShopController shopController` в `Player` и `PlayerFishingInput`.
+
+Перед движением, обзором и обработкой рыбалки проверяй:
+
+```csharp
+if (shopController != null && shopController.IsOpen)
+    return;
+```
+
+Не открывай паузу поверх магазина. В `PauseUI` добавь ссылку на `ShopController` и аналогичную проверку в `OnToggle`.
+
+## 50–58 минут. Проверяем транзакции
+
+1. Открой пустой магазин и нажми продажу — баланс остаётся 0.
+2. Поймай и оставь две рыбы.
+3. Запомни стоимость садка.
+4. Продай — баланс увеличивается ровно на эту сумму.
+5. Нажми продажу второй раз — монеты не меняются.
+6. Закрой магазин — управление восстанавливается.
+
+## 58–60 минут. Контрольная точка
+
+- Почему магазин сначала получает сумму, а затем очищает инвентарь?
+- Почему `ShopController` должен оставаться активным?
+- Какие три состояния не должны открываться друг поверх друга?
+
+---
+
+# Занятие 10. Одна наживка и финальная проверка MVP
+
+## Цель
+
+Добавить магазину единственный полезный товар, связать его с поклёвкой и доказать стабильность полного цикла.
+
+## Результат занятия
+
+- За 15 монет покупаются 5 порций теста.
+- Один заброс расходует одну порцию.
+- Тесто ускоряет ожидание поклёвки.
+- Недостаток денег не изменяет количество теста.
+- Полный MVP проходит три раза без ошибок.
+
+## 0–15 минут. Создаём BaitInventory.cs
+
+Создай `Assets/_Project/Scripts/BaitInventory.cs`:
+
+```csharp
+using TMPro;
+using UnityEngine;
+
+public class BaitInventory : MonoBehaviour
+{
+    [SerializeField] private TMP_Text baitText;
+    [SerializeField] private int usesRemaining;
+    [SerializeField] private float biteSpeedMultiplier = 1.7f;
+
+    public int UsesRemaining => usesRemaining;
+
+    private void Start()
+    {
+        RefreshUI();
+    }
+
+    public void AddUses(int amount)
+    {
+        if (amount <= 0)
+            return;
+
+        usesRemaining += amount;
+        RefreshUI();
+    }
+
+    public float UseOne()
+    {
+        if (usesRemaining <= 0)
+            return 1f;
+
+        usesRemaining--;
+        RefreshUI();
+        return biteSpeedMultiplier;
+    }
+
+    private void RefreshUI()
+    {
+        if (baitText != null)
+            baitText.text = $"Тесто: {usesRemaining}";
+    }
+}
+```
+
+Добавь компонент на `PlayerData`. В `FishingHUD` создай `BaitText` и назначь его.
+
+## 15–27 минут. Добавляем покупку
+
+В `ShopController` добавь:
+
+```csharp
+[SerializeField] private BaitInventory baitInventory;
+[SerializeField] private int baitPrice = 15;
+[SerializeField] private int baitUsesPerPurchase = 5;
+```
+
+Добавь метод:
+
+```csharp
+public void BuyBait()
+{
+    if (!playerWallet.TrySpend(baitPrice))
+    {
+        ShowMessage("Недостаточно монет для покупки теста.");
+        return;
+    }
+
+    baitInventory.AddUses(baitUsesPerPurchase);
+    ShowMessage($"Куплено тесто: {baitUsesPerPurchase} порций.");
+}
+```
+
+В существующем префабе `наживка.prefab`:
+
+1. напиши «Тесто»;
+2. укажи «15 монет / 5 забросов»;
+3. на экземпляре в `Scene1` привяжи кнопку к `ShopController.BuyBait`;
+4. не применяй ссылку на `PlayerData` внутрь prefab asset.
+
+## 27–40 минут. Ускоряем BiteSystem
+
+В `BiteSystem` добавь:
+
+```csharp
+[SerializeField] private BaitInventory baitInventory;
+private float baitModifier = 1f;
+```
+
+В `StartWaiting` перед запуском корутины:
+
+```csharp
+baitModifier = baitInventory != null
+    ? baitInventory.UseOne()
+    : 1f;
+```
+
+В `WaitForBite` вычисляй модификатор так:
+
+```csharp
+float modifier = Mathf.Max(
+    0.1f,
+    currentSpot.biteChanceModifier * baitModifier
+);
+```
+
+В `StopWaiting` верни:
+
+```csharp
+baitModifier = 1f;
+```
+
+Назначь `PlayerData/BaitInventory` в override экземпляра `BiteSystem`.
+
+Одна порция расходуется при завершённом забросе и начале ожидания. Ложная поклёвка продолжает ту же корутину и не расходует вторую порцию.
+
+## 40–48 минут. Тестируем покупку
+
+1. С балансом меньше 15 нажми покупку — количество не меняется.
+2. Продай рыбу и получи не менее 15 монет.
+3. Купи тесто — баланс уменьшается на 15, количество становится 5.
+4. Закрой магазин и сделай заброс — количество становится 4.
+5. Отмени рыбалку клавишей `R` после начала ожидания — использованная порция не возвращается.
+
+## 48–57 минут. Сквозной тест MVP
+
+Пройди три раза:
+
+| Шаг | Проверка |
+|---:|---|
+| 1 | `MainMenu` загружает `Scene1` |
+| 2 | Игрок движется, прыгает и смотрит мышью |
+| 3 | Заброс работает только по воде |
+| 4 | Поклёвка запускает мини-игру |
+| 5 | Улов показывает одну модель и один точный вес |
+| 6 | «Отпустить» не добавляет рыбу |
+| 7 | «В садок» добавляет ровно одну рыбу |
+| 8 | Продажа один раз переводит стоимость в монеты |
+| 9 | Покупка теста списывает деньги и добавляет 5 порций |
+| 10 | Следующий заброс расходует одну порцию |
+| 11 | Пауза, результат и магазин не накладываются |
+| 12 | Console не содержит ошибок |
+
+## 57–60 минут. Решение о готовности
+
+MVP готов, если:
+
+- весь цикл можно объяснить за одну минуту;
+- новый игрок понимает управление без помощи разработчика;
+- три последовательных прохождения не требуют перезапуска сцены;
+- значения веса, количества рыб, монет и теста не расходятся;
+- ни одна кнопка не создаёт награду дважды;
+- в Console нет `NullReferenceException`, `Missing Script` и ошибок компиляции.
+
+После этой точки сделай отдельный Git-коммит `Рабочий MVP рыбалки`. Только затем переходи к сохранению, нескольким локациям или улучшению удочки.
+
+---
+
+# Справочник: первоначальный план экономики
+
+Этот блок был написан до аудита проекта от 25 августа 2026 года. Не проходи его параллельно с актуальными занятиями 6–10: используй его позже как справочник по расширенной экономике и сохранениям.
 
 Перед началом второй части полностью пройди чек-лист MVP. Экономика опирается на события улова, поэтому не стоит добавлять магазин, пока базовая рыбалка работает нестабильно.
 
@@ -1289,7 +2209,7 @@ public void BackToMainMenu()
 
 ---
 
-# Занятие 6. Чистая сцена и правильные префабы
+# Справочный блок E1. Чистая сцена и правильные префабы
 
 ## Цель
 
@@ -1437,7 +2357,7 @@ Assets/_Project/Prefabs/UI
 
 ---
 
-# Занятие 7. Несколько рыб и инвентарь улова
+# Справочный блок E2. Несколько рыб и инвентарь улова
 
 ## Цель
 
@@ -1681,7 +2601,7 @@ private void OnFishLanded(FishData fish, float weight)
 
 ---
 
-# Занятие 8. Монеты и продажа улова
+# Справочный блок E3. Монеты и продажа улова
 
 ## Цель
 
@@ -1906,7 +2826,7 @@ public class ShopController : MonoBehaviour
 
 ---
 
-# Занятие 9. Покупка наживки
+# Справочный блок E4. Покупка наживки
 
 ## Цель
 
@@ -2145,7 +3065,7 @@ if (baitText != null)
 
 ---
 
-# Занятие 10. Сохранение экономики и финальная сборка
+# Справочный блок E5. Сохранение экономики и финальная сборка
 
 ## Цель
 
