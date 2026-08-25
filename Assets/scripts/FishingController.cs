@@ -25,9 +25,10 @@ namespace Fishing.Core
         public IFishable CurrentFish { get; private set; } // ��������� ���� � ���
 
         public event Action<FishData> OnFishHooked;   // ������� ��� UI/�����
-        public event Action<FishData> OnFishLanded;
+        public event Action<FishData, float> OnFishLanded;
         public event Action OnFishEscaped;
         private bool isFishingInProgress;
+        
 
         private void Awake()
         {
@@ -103,13 +104,11 @@ namespace Fishing.Core
 
             CurrentFish.State = FishState.Landed;
             FishData landedFish = currentFishData;
+            float landedWeight = CurrentFish.Weight;
 
-            Debug.Log($"���� {landedFish.fishName} �������!");
-
-            // ����� ����� ����� ���������� ����-����
-            // ... ��� ��� ��� ������ ��������� ����-���� ...
+            Debug.Log($"Поймана рыба {landedFish.fishName}, {landedWeight:F1} кг!");
             ResetFishingSystems();
-            OnFishLanded?.Invoke(landedFish);
+            OnFishLanded?.Invoke(landedFish, landedWeight);
         }
 
         public void OnFishEscape()
@@ -141,6 +140,7 @@ namespace Fishing.Core
             private FishData data;
             private float maxResistance;
             private float currentTiredness = 0f;
+            public float Weight { get; }
 
             public string SpeciesId => data.name;
             public FishState State { get; set; }
@@ -149,7 +149,8 @@ namespace Fishing.Core
             public FishInstance(FishData data)
             {
                 this.data = data;
-                maxResistance = data.baseResistance * UnityEngine.Random.Range(data.weightMin, data.weightMax);
+                Weight = UnityEngine.Random.Range(data.weightMin, data.weightMax);
+                maxResistance = data.baseResistance * Weight;
                 State = FishState.Hooked;
             }
 

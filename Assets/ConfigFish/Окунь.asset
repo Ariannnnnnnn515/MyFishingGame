@@ -19,4 +19,5 @@ MonoBehaviour:
   escapeSpeed: 0.3
   fishPrefab: {fileID: 7493080291266779876, guid: 8acb45edf9fd6254da8b9d7ae4191372, type: 3}
   iconInUI: {fileID: 0}
-  experienceReward: 12
+  experienceReward: 15
+  pricePerKilogram: 11
