@@ -37,4 +37,9 @@ public class PlayerWallet : MonoBehaviour
         Coins = Mathf.Max(0, startingCoins);
         OnCoinsChanged?.Invoke();
     }
+
+    internal bool TrySpendCoins(object price)
+    {
+        throw new NotImplementedException();
+    }
 }

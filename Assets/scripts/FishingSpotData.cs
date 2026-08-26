@@ -1,28 +1,19 @@
 using UnityEngine;
-using System.Collections.Generic;
 
 namespace Fishing.Core.Data
 {
     /// <summary>
-    /// Зона ловли (у воды). Определяет, какая рыба водится и шансы.
+    /// Данные о месте рыбалки
     /// </summary>
     [CreateAssetMenu(fileName = "NewFishingSpot", menuName = "Fishing/Spot Data")]
     public class FishingSpotData : ScriptableObject
     {
-        public string spotName = "Лесное озеро";
+        public string spotName = "Озеро";
+        public float biteSpeedMultiplier = 1f; // 1 = стандартная скорость, >1 быстрее
+        public Vector3 spotPosition;
+        public float radius = 5f;
 
-        [System.Serializable]
-        public struct FishPoolEntry
-        {
-            public FishData fishData;
-            [Range(0, 100)] public int spawnWeight; // Вес для случайного выбора
-        }
-
-        public FishPoolEntry[] fishPool;
-        public float biteChanceModifier = 1.0f; // Множитель клёва (погода/время)
-
-        [Header("Визуальные эффекты")]
-        public ParticleSystem rippleEffect;
-        public AudioClip waterSplash;
+        [Header("Доступные рыбы")]
+        public FishData[] availableFish;
     }
 }
