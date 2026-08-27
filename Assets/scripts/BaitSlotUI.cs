@@ -1,6 +1,5 @@
 using Fishing.Core;
 using Fishing.Core.Data;
-using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -58,6 +57,14 @@ public class BaitSlotUI : MonoBehaviour
             countText.text = newCount.ToString();
     }
 
+    /// <summary>
+    /// Получить данные наживки для этого слота
+    /// </summary>
+    public BaitData GetBaitData()
+    {
+        return myBait;
+    }
+
     private void OnSlotClick()
     {
         if (fishingController == null)
@@ -87,7 +94,7 @@ public class BaitSlotUI : MonoBehaviour
         fishingController.SetCurrentBait(myBait);
 
         // Обновляем UI выбора
-        BaitSelectionPanelUI panel = FindObjectOfType<BaitSelectionPanelUI>();
+        BaitSelectionPanelUI panel = GetComponentInParent<BaitSelectionPanelUI>();
         if (panel != null)
         {
             panel.RefreshSelection();
@@ -101,10 +108,5 @@ public class BaitSlotUI : MonoBehaviour
             BaitData currentBait = fishingController.GetCurrentBait();
             UpdateSelection(currentBait == myBait);
         }
-    }
-
-    internal BaitData GetMyBait()
-    {
-        throw new NotImplementedException();
     }
 }
