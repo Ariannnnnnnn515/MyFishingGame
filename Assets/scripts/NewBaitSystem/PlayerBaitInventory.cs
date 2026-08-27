@@ -1,19 +1,20 @@
-using UnityEngine;
+п»їusing Fishing.Core.Data;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 public class PlayerBaitInventory : MonoBehaviour
 {
-    public static PlayerBaitInventory Instance; // Простой синглтон
+    public static PlayerBaitInventory Instance; // ГЏГ°Г®Г±ГІГ®Г© Г±ГЁГ­ГЈГ«ГІГ®Г­
 
-    // Словарь для хранения: наживка -> количество
+    // Г‘Г«Г®ГўГ Г°Гј Г¤Г«Гї ГµГ°Г Г­ГҐГ­ГЁГї: Г­Г Г¦ГЁГўГЄГ  -> ГЄГ®Г«ГЁГ·ГҐГ±ГІГўГ®
     private Dictionary<BaitData, int> baitCounts = new Dictionary<BaitData, int>();
 
-    [Header("Стартовый набор")]
-    public BaitData starterBait; // Сюда назначишь "Тесто"
+    [Header("Г‘ГІГ Г°ГІГ®ГўГ»Г© Г­Г ГЎГ®Г°")]
+    public BaitData starterBait; // Г‘ГѕГ¤Г  Г­Г Г§Г­Г Г·ГЁГёГј "Г’ГҐГ±ГІГ®"
     public int starterAmount = 15;
 
-    // Событие, чтобы обновлять UI при изменении
+    // Г‘Г®ГЎГ»ГІГЁГҐ, Г·ГІГ®ГЎГ» Г®ГЎГ­Г®ГўГ«ГїГІГј UI ГЇГ°ГЁ ГЁГ§Г¬ГҐГ­ГҐГ­ГЁГЁ
     public System.Action OnInventoryChanged;
 
     private void Awake()
@@ -24,14 +25,14 @@ public class PlayerBaitInventory : MonoBehaviour
 
     private void Start()
     {
-        // Добавляем стартовую наживку
+        // Г„Г®ГЎГ ГўГ«ГїГҐГ¬ Г±ГІГ Г°ГІГ®ГўГіГѕ Г­Г Г¦ГЁГўГЄГі
         if (starterBait != null)
         {
             AddBait(starterBait, starterAmount);
         }
     }
 
-    // Добавить наживку (например, после покупки)
+    // Г„Г®ГЎГ ГўГЁГІГј Г­Г Г¦ГЁГўГЄГі (Г­Г ГЇГ°ГЁГ¬ГҐГ°, ГЇГ®Г±Г«ГҐ ГЇГ®ГЄГіГЇГЄГЁ)
     public void AddBait(BaitData bait, int amount)
     {
         if (baitCounts.ContainsKey(bait))
@@ -42,7 +43,7 @@ public class PlayerBaitInventory : MonoBehaviour
         OnInventoryChanged?.Invoke();
     }
 
-    // Потратить наживку
+    // ГЏГ®ГІГ°Г ГІГЁГІГј Г­Г Г¦ГЁГўГЄГі
     public bool SpendBait(BaitData bait, int amount = 1)
     {
         if (!baitCounts.ContainsKey(bait) || baitCounts[bait] < amount)
@@ -57,13 +58,13 @@ public class PlayerBaitInventory : MonoBehaviour
         return true;
     }
 
-    // Получить количество
+    // ГЏГ®Г«ГіГ·ГЁГІГј ГЄГ®Г«ГЁГ·ГҐГ±ГІГўГ®
     public int GetBaitCount(BaitData bait)
     {
         return baitCounts.ContainsKey(bait) ? baitCounts[bait] : 0;
     }
 
-    // Получить список всех наживок, которые есть у игрока (для UI)
+    // ГЏГ®Г«ГіГ·ГЁГІГј Г±ГЇГЁГ±Г®ГЄ ГўГ±ГҐГµ Г­Г Г¦ГЁГўГ®ГЄ, ГЄГ®ГІГ®Г°Г»ГҐ ГҐГ±ГІГј Гі ГЁГЈГ°Г®ГЄГ  (Г¤Г«Гї UI)
     public List<BaitData> GetOwnedBaits()
     {
         return baitCounts.Keys.ToList();

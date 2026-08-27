@@ -49,9 +49,14 @@ namespace Fishing.Core
         private void Start()
         {
             // Инициализация подсистем
-            castingSystem.Initialize(this);
-            biteSystem.Initialize(this);
-            reelingSystem.Initialize(this);
+            if (castingSystem != null)
+                castingSystem.Initialize(this);
+
+            if (biteSystem != null)
+                biteSystem.Initialize(this);
+
+            if (reelingSystem != null)
+                reelingSystem.Initialize(this);
 
             // Проверяем, есть ли стартовая наживка у игрока
             CheckAndSetDefaultBait();
@@ -62,6 +67,12 @@ namespace Fishing.Core
         /// </summary>
         private void CheckAndSetDefaultBait()
         {
+            if (PlayerBaitInventory.Instance == null)
+            {
+                Debug.LogWarning("PlayerBaitInventory.Instance == null!");
+                return;
+            }
+
             var ownedBaits = PlayerBaitInventory.Instance.GetOwnedBaits();
             if (ownedBaits.Count > 0)
             {
@@ -90,6 +101,12 @@ namespace Fishing.Core
             }
 
             // Проверяем, есть ли такая наживка в инвентаре
+            if (PlayerBaitInventory.Instance == null)
+            {
+                Debug.LogError("PlayerBaitInventory.Instance == null!");
+                return;
+            }
+
             int count = PlayerBaitInventory.Instance.GetBaitCount(newBait);
             if (count > 0)
             {
@@ -101,7 +118,7 @@ namespace Fishing.Core
                 // Если рыбалка не активна, обновляем систему ожидания поклевки
                 if (!isFishingInProgress && biteSystem != null)
                 {
-                    biteSystem.UpdateBait(newBait);
+                    biteSystem.SetCurrentBait(newBait);
                 }
             }
             else
@@ -113,10 +130,21 @@ namespace Fishing.Core
         }
 
         /// <summary>
+        /// Получить текущую наживку (ПУБЛИЧНЫЙ МЕТОД)
+        /// </summary>
+        public BaitData GetCurrentBait()
+        {
+            return currentBait;
+        }
+
+        /// <summary>
         /// Попытаться переключиться на другую доступную наживку
         /// </summary>
         private void TrySwitchToAvailableBait()
         {
+            if (PlayerBaitInventory.Instance == null)
+                return;
+
             var ownedBaits = PlayerBaitInventory.Instance.GetOwnedBaits();
             if (ownedBaits.Count > 0)
             {
@@ -129,14 +157,6 @@ namespace Fishing.Core
                 OnBaitChanged?.Invoke(null);
                 Debug.LogWarning("Все наживки закончились!");
             }
-        }
-
-        /// <summary>
-        /// Получить текущую наживку
-        /// </summary>
-        public BaitData GetCurrentBait()
-        {
-            return currentBait;
         }
 
         /// <summary>
@@ -165,6 +185,12 @@ namespace Fishing.Core
             }
 
             // Проверка количества наживки
+            if (PlayerBaitInventory.Instance == null)
+            {
+                Debug.LogError("PlayerBaitInventory.Instance == null!");
+                return;
+            }
+
             int baitCount = PlayerBaitInventory.Instance.GetBaitCount(currentBait);
             if (baitCount <= 0)
             {
@@ -179,9 +205,13 @@ namespace Fishing.Core
             hasEnoughBait = true;
 
             // Передаем наживку в систему поклевки
-            biteSystem.SetCurrentBait(currentBait);
+            if (biteSystem != null)
+                biteSystem.SetCurrentBait(currentBait);
 
-            castingSystem.StartCast(targetPosition, OnCastComplete);
+            if (castingSystem != null)
+                castingSystem.StartCast(targetPosition, OnCastComplete);
+            else
+                Debug.LogError("CastingSystem не назначен!");
         }
 
         /// <summary>
@@ -190,7 +220,10 @@ namespace Fishing.Core
         private void OnCastComplete()
         {
             Debug.Log($"Заброс выполнен. Наживка: {currentBait?.baitName ?? "отсутствует"}");
-            biteSystem.StartWaiting(currentSpot);
+            if (biteSystem != null)
+                biteSystem.StartWaiting(currentSpot);
+            else
+                Debug.LogError("BiteSystem не назначен!");
         }
 
         /// <summary>
@@ -205,6 +238,12 @@ namespace Fishing.Core
             }
 
             // Проверяем, есть ли наживка в инвентаре
+            if (PlayerBaitInventory.Instance == null)
+            {
+                Debug.LogError("PlayerBaitInventory.Instance == null!");
+                return;
+            }
+
             if (!PlayerBaitInventory.Instance.SpendBait(currentBait, 1))
             {
                 Debug.LogWarning($"Наживка {currentBait.baitName} не найдена в инвентаре!");
@@ -230,7 +269,11 @@ namespace Fishing.Core
 
             CurrentFish.OnHooked();
             OnFishHooked?.Invoke(fishData);
-            reelingSystem.StartFight(CurrentFish);
+
+            if (reelingSystem != null)
+                reelingSystem.StartFight(CurrentFish);
+            else
+                Debug.LogError("ReelingSystem не назначен!");
         }
 
         /// <summary>
@@ -238,7 +281,7 @@ namespace Fishing.Core
         /// </summary>
         private void ResumeWaitingAfterMiss()
         {
-            if (isFishingInProgress && currentSpot != null)
+            if (isFishingInProgress && currentSpot != null && biteSystem != null)
             {
                 biteSystem.StartWaiting(currentSpot);
             }
@@ -261,6 +304,8 @@ namespace Fishing.Core
 
             foreach (FishData fish in allFishInGame)
             {
+                if (fish == null) continue;
+
                 int chance = fish.GetChanceForBait(bait);
                 if (chance > 0)
                 {
@@ -288,7 +333,7 @@ namespace Fishing.Core
                 cumulative += chances[i];
                 if (randomValue < cumulative)
                 {
-                    Debug.Log($"Шансы: {possibleFish[i].fishName} = {chances[i]}%");
+                    Debug.Log($"Выбрана рыба: {possibleFish[i].fishName} (шанс: {chances[i]}%)");
                     return possibleFish[i];
                 }
             }
@@ -332,9 +377,14 @@ namespace Fishing.Core
         /// </summary>
         private void ResetFishingSystems()
         {
-            biteSystem.StopWaiting();
-            reelingSystem.StopFight();
-            castingSystem.ResetCast();
+            if (biteSystem != null)
+                biteSystem.StopWaiting();
+
+            if (reelingSystem != null)
+                reelingSystem.StopFight();
+
+            if (castingSystem != null)
+                castingSystem.ResetCast();
 
             CurrentFish = null;
             currentFishData = null;

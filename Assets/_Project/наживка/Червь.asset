@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 23f88ba83e1deb14ca6cd86f24c56598, type: 3}
-  m_Name: "\u0422\u0435\u0441\u0442\u043E"
+  m_Name: "\u0427\u0435\u0440\u0432\u044C"
   m_EditorClassIdentifier: 
-  baitName: "\u0422\u0435\u0441\u0442\u043E"
+  baitName: "\u0427\u0435\u0440\u0432\u044C"
   baitIcon: {fileID: 0}
   baitPrefab: {fileID: 0}
-  basePrice: 10
-  usesPerPurchase: 15
-  biteSpeedMultiplier: 1
+  basePrice: 20
+  usesPerPurchase: 10
+  biteSpeedMultiplier: 1.2

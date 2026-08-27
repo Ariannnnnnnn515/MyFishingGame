@@ -1,3 +1,4 @@
+using Fishing.Core.Data;
 using System;
 using UnityEngine;
 
@@ -14,25 +15,38 @@ public class BaitInventory : MonoBehaviour
     public void AddBait(BaitData bait)
     {
         if (bait == null)
-            return;
-
-        if (currentBait != bait)
         {
-            currentBait = bait;
-            usesRemaining = 0;
+            Debug.LogWarning("Попытка добавить null наживку!");
+            return;
         }
 
-        usesRemaining += bait.usesPerPurchase;
+        // Если наживка та же - просто добавляем использования
+        if (currentBait == bait)
+        {
+            usesRemaining += bait.usesPerPurchase;
+        }
+        else
+        {
+            // Если наживка другая - меняем на новую
+            currentBait = bait;
+            usesRemaining = bait.usesPerPurchase;
+        }
+
         OnBaitChanged?.Invoke();
+        Debug.Log($"Добавлена наживка {bait.baitName}. Осталось использований: {usesRemaining}");
     }
 
     public float UseBait()
     {
         if (currentBait == null || usesRemaining <= 0)
-            return 1f;
+        {
+            Debug.LogWarning("Нет наживки для использования!");
+            return 1f; // Возвращаем стандартный множитель
+        }
 
         usesRemaining--;
         OnBaitChanged?.Invoke();
+        Debug.Log($"Использована наживка {currentBait.baitName}. Осталось: {usesRemaining}");
         return currentBait.biteSpeedMultiplier;
     }
 
@@ -40,5 +54,16 @@ public class BaitInventory : MonoBehaviour
     {
         usesRemaining = 0;
         OnBaitChanged?.Invoke();
+        Debug.Log("Наживка сброшена");
+    }
+
+    public bool HasBait()
+    {
+        return currentBait != null && usesRemaining > 0;
+    }
+
+    public int GetUsesRemaining()
+    {
+        return usesRemaining;
     }
 }

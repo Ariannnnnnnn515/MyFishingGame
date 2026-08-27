@@ -1,13 +1,18 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "NewBait", menuName = "Fishing Game/Bait Data")]
-public class BaitData : ScriptableObject
+namespace Fishing.Core.Data
 {
-    public string baitName;
-    public Sprite baitIcon;
-    public GameObject baitPrefab; // 3D модель наживки на крючке (опционально)
-    public int basePrice; // цена в магазине
-    internal float biteSpeedMultiplier;
-    internal int usesPerPurchase;
-    internal int price;
+    [CreateAssetMenu(fileName = "NewBait", menuName = "Fishing/Bait Data")]
+    public class BaitData : ScriptableObject
+    {
+        [Header("Основное")]
+        public string baitName = "Тесто";
+        public Sprite baitIcon;
+        public GameObject baitPrefab;
+        public int basePrice = 10;
+
+        [Header("Игровые параметры")]
+        public int usesPerPurchase = 15;
+        public float biteSpeedMultiplier = 1.0f;
+    }
 }

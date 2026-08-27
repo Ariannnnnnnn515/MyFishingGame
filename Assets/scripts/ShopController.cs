@@ -1,3 +1,4 @@
+using Fishing.Core.Data;
 using TMPro;
 using UnityEngine;
 
@@ -102,6 +103,7 @@ public class ShopController : MonoBehaviour
 
         RefreshUI();
     }
+
     public void BuyBait(BaitData bait)
     {
         if (bait == null)
@@ -110,7 +112,8 @@ public class ShopController : MonoBehaviour
             return;
         }
 
-        if (!playerWallet.TrySpendCoins(bait.price))
+        // ИСПРАВЛЕНО: используем basePrice вместо price
+        if (!playerWallet.TrySpendCoins(bait.basePrice))
         {
             ShowMessage("Недостаточно монет.");
             return;

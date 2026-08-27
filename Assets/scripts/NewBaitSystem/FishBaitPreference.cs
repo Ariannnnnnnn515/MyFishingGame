@@ -1,9 +1,18 @@
-using UnityEngine;
 using System;
+using UnityEngine;
 
-[Serializable] // Чтобы видеть в инспекторе
-public class FishBaitPreference
+// Убираем пространство имен или оставляем то же, что и в FishData
+// Если в FishData используется namespace Fishing.Core.Data, то и здесь должно быть так же
+namespace Fishing.Core.Data
 {
-    public BaitData bait;       // Какая наживка
-    [Range(0, 100)] public int chance; // Шанс поймать эту рыбу на эту наживку (в %)
+    [Serializable]
+    public class FishBaitPreference
+    {
+        [Tooltip("Наживка, для которой настраивается шанс")]
+        public BaitData bait;
+
+        [Tooltip("Шанс поклевки (0-100%)")]
+        [Range(0, 100)]
+        public int chance = 50;
+    }
 }
