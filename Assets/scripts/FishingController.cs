@@ -7,36 +7,31 @@ using System.Collections.Generic;
 
 namespace Fishing.Core
 {
-    /// <summary>
-    /// Главный контроллер рыбалки. Синглтон.
-    /// Управляет системами заброса, поклевки и вываживания.
-    /// </summary>
     public class FishingController : MonoBehaviour
     {
         public static FishingController Instance { get; private set; }
 
-        // Ссылки на подсистемы (назначаются в Inspector или через Find)
         [SerializeField] private CastingSystem castingSystem;
         [SerializeField] private BiteSystem biteSystem;
         [SerializeField] private ReelingSystem reelingSystem;
 
         [Header("Система наживок")]
-        [SerializeField] private BaitData currentBait; // Текущая выбранная наживка
-        [SerializeField] private List<FishData> allFishInGame; // ВСЕ рыбы в игре (для выбора)
+        [SerializeField] private BaitData currentBait;
+        [SerializeField] private List<FishData> allFishInGame;
 
         [Header("Настройки рыбалки")]
         [SerializeField] private FishingSpotData currentSpot;
-        [SerializeField] private FishData currentFishData; // Выбранная рыба (для отладки)
-        public IFishable CurrentFish { get; private set; } // Экземпляр рыбы в бою
+        [SerializeField] private FishData currentFishData;
+        public IFishable CurrentFish { get; private set; }
 
-        // События для UI и других систем
-        public event Action<FishData> OnFishHooked;   // Рыба клюнула
-        public event Action<FishData, float> OnFishLanded; // Поймали
-        public event Action OnFishEscaped; // Сорвалась
-        public event Action<BaitData> OnBaitChanged; // Сменилась наживка
+        public event Action<FishData> OnFishHooked;
+        public event Action<FishData, float> OnFishLanded;
+        public event Action OnFishEscaped;
+        public event Action<BaitData> OnBaitChanged;
 
         private bool isFishingInProgress;
-        private bool hasEnoughBait; // Флаг, что наживка есть
+        private bool hasEnoughBait;
+        private bool isInitialized = false;
 
         private void Awake()
         {
@@ -51,20 +46,40 @@ namespace Fishing.Core
             // Инициализация подсистем
             if (castingSystem != null)
                 castingSystem.Initialize(this);
+            else
+                Debug.LogError("CastingSystem не назначен в FishingController!");
 
             if (biteSystem != null)
                 biteSystem.Initialize(this);
+            else
+                Debug.LogError("BiteSystem не назначен в FishingController!");
 
             if (reelingSystem != null)
                 reelingSystem.Initialize(this);
+            else
+                Debug.LogError("ReelingSystem не назначен в FishingController!");
 
-            // Проверяем, есть ли стартовая наживка у игрока
-            CheckAndSetDefaultBait();
+            // Проверяем наличие наживки с задержкой
+            Invoke(nameof(CheckAndSetDefaultBaitDelayed), 0.3f);
         }
 
-        /// <summary>
-        /// Проверяет и устанавливает наживку по умолчанию (если есть в инвентаре)
-        /// </summary>
+        private void CheckAndSetDefaultBaitDelayed()
+        {
+            Debug.Log("Проверка стартовой наживки...");
+            CheckAndSetDefaultBait();
+
+            if (currentBait == null)
+            {
+                Debug.LogWarning("Повторная попытка установки наживки через 0.5с...");
+                Invoke(nameof(CheckAndSetDefaultBait), 0.5f);
+            }
+            else
+            {
+                isInitialized = true;
+                Debug.Log($"FishingController инициализирован. Наживка: {currentBait.baitName}");
+            }
+        }
+
         private void CheckAndSetDefaultBait()
         {
             if (PlayerBaitInventory.Instance == null)
@@ -76,8 +91,8 @@ namespace Fishing.Core
             var ownedBaits = PlayerBaitInventory.Instance.GetOwnedBaits();
             if (ownedBaits.Count > 0)
             {
-                // Берем первую доступную наживку
                 SetCurrentBait(ownedBaits[0]);
+                Debug.Log($"Автоматически выбрана наживка: {ownedBaits[0].baitName}");
             }
             else
             {
@@ -87,9 +102,6 @@ namespace Fishing.Core
             }
         }
 
-        /// <summary>
-        /// Установить текущую наживку
-        /// </summary>
         public void SetCurrentBait(BaitData newBait)
         {
             if (newBait == null)
@@ -100,7 +112,6 @@ namespace Fishing.Core
                 return;
             }
 
-            // Проверяем, есть ли такая наживка в инвентаре
             if (PlayerBaitInventory.Instance == null)
             {
                 Debug.LogError("PlayerBaitInventory.Instance == null!");
@@ -113,9 +124,8 @@ namespace Fishing.Core
                 currentBait = newBait;
                 hasEnoughBait = true;
                 OnBaitChanged?.Invoke(newBait);
-                Debug.Log($"Выбрана наживка: {newBait.baitName}");
+                Debug.Log($"Выбрана наживка: {newBait.baitName} (осталось: {count})");
 
-                // Если рыбалка не активна, обновляем систему ожидания поклевки
                 if (!isFishingInProgress && biteSystem != null)
                 {
                     biteSystem.SetCurrentBait(newBait);
@@ -124,22 +134,24 @@ namespace Fishing.Core
             else
             {
                 Debug.Log($"Нет наживки {newBait.baitName} в инвентаре!");
-                // Если текущая наживка закончилась, пытаемся найти другую
                 TrySwitchToAvailableBait();
             }
         }
 
-        /// <summary>
-        /// Получить текущую наживку (ПУБЛИЧНЫЙ МЕТОД)
-        /// </summary>
         public BaitData GetCurrentBait()
         {
             return currentBait;
         }
 
-        /// <summary>
-        /// Попытаться переключиться на другую доступную наживку
-        /// </summary>
+        public bool HasEnoughBait()
+        {
+            if (currentBait == null)
+                return false;
+
+            return PlayerBaitInventory.Instance != null &&
+                   PlayerBaitInventory.Instance.GetBaitCount(currentBait) > 0;
+        }
+
         private void TrySwitchToAvailableBait()
         {
             if (PlayerBaitInventory.Instance == null)
@@ -159,9 +171,6 @@ namespace Fishing.Core
             }
         }
 
-        /// <summary>
-        /// Выполнить заброс в указанную точку.
-        /// </summary>
         public void PerformCast(Vector3 targetPosition, FishingSpotData spot)
         {
             if (isFishingInProgress)
@@ -176,15 +185,17 @@ namespace Fishing.Core
                 return;
             }
 
-            // Проверка наличия наживки
             if (currentBait == null)
             {
                 Debug.LogWarning("Нет выбранной наживки! Нельзя закинуть удочку.");
-                // Можно показать UI сообщение
-                return;
+                TrySwitchToAvailableBait();
+                if (currentBait == null)
+                {
+                    Debug.LogError("Нет доступных наживок!");
+                    return;
+                }
             }
 
-            // Проверка количества наживки
             if (PlayerBaitInventory.Instance == null)
             {
                 Debug.LogError("PlayerBaitInventory.Instance == null!");
@@ -197,26 +208,32 @@ namespace Fishing.Core
                 Debug.LogWarning($"Наживка {currentBait.baitName} закончилась!");
                 hasEnoughBait = false;
                 TrySwitchToAvailableBait();
-                return;
+                if (currentBait == null)
+                {
+                    Debug.LogError("Нет доступных наживок!");
+                    return;
+                }
             }
 
             isFishingInProgress = true;
             currentSpot = spot;
             hasEnoughBait = true;
 
-            // Передаем наживку в систему поклевки
             if (biteSystem != null)
                 biteSystem.SetCurrentBait(currentBait);
 
             if (castingSystem != null)
+            {
+                Debug.Log($"Заброс с наживкой: {currentBait.baitName}");
                 castingSystem.StartCast(targetPosition, OnCastComplete);
+            }
             else
+            {
                 Debug.LogError("CastingSystem не назначен!");
+                isFishingInProgress = false;
+            }
         }
 
-        /// <summary>
-        /// Колбэк после завершения заброса (поплавок в воде).
-        /// </summary>
         private void OnCastComplete()
         {
             Debug.Log($"Заброс выполнен. Наживка: {currentBait?.baitName ?? "отсутствует"}");
@@ -226,24 +243,29 @@ namespace Fishing.Core
                 Debug.LogError("BiteSystem не назначен!");
         }
 
-        /// <summary>
-        /// Обработка поклевки от BiteSystem
-        /// </summary>
         public void OnBiteOccurred()
         {
-            if (!isFishingInProgress || currentBait == null)
+            Debug.Log($"OnBiteOccurred вызван! isFishingInProgress={isFishingInProgress}, currentBait={currentBait?.baitName ?? "null"}");
+
+            if (!isFishingInProgress)
             {
-                Debug.Log("Поклевка отменена: нет активной рыбалки или наживки");
+                Debug.Log("Поклевка отменена: нет активной рыбалки");
                 return;
             }
 
-            // Проверяем, есть ли наживка в инвентаре
+            if (currentBait == null)
+            {
+                Debug.Log("Поклевка отменена: нет наживки");
+                return;
+            }
+
             if (PlayerBaitInventory.Instance == null)
             {
                 Debug.LogError("PlayerBaitInventory.Instance == null!");
                 return;
             }
 
+            // Тратим наживку
             if (!PlayerBaitInventory.Instance.SpendBait(currentBait, 1))
             {
                 Debug.LogWarning($"Наживка {currentBait.baitName} не найдена в инвентаре!");
@@ -252,33 +274,50 @@ namespace Fishing.Core
                 return;
             }
 
-            // Выбираем рыбу на основе текущей наживки
+            // Выбираем рыбу
             FishData fishData = GetRandomFishByBait(currentBait);
 
             if (fishData == null)
             {
                 Debug.Log($"На наживку {currentBait.baitName} ничего не клюнуло!");
-                // Небольшая задержка перед повторным ожиданием
                 Invoke(nameof(ResumeWaitingAfterMiss), 1.5f);
                 return;
             }
 
-            // Успешная поклевка!
+            // ========== КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ ==========
+            Debug.Log($"УСПЕШНАЯ ПОКЛЕВКА! Рыба: {fishData.fishName}");
+
             currentFishData = fishData;
             CurrentFish = new FishInstance(fishData);
-
             CurrentFish.OnHooked();
+
+            // Вызываем событие для UI
             OnFishHooked?.Invoke(fishData);
 
+            // ЗАПУСКАЕМ МИНИ-ИГРУ ВЫВАЖИВАНИЯ
             if (reelingSystem != null)
+            {
+                Debug.Log($"Запуск ReelingSystem.StartFight() для рыбы: {fishData.fishName}");
                 reelingSystem.StartFight(CurrentFish);
+            }
             else
-                Debug.LogError("ReelingSystem не назначен!");
+            {
+                Debug.LogError("ReelingSystem НЕ НАЗНАЧЕН! Пытаемся найти...");
+                reelingSystem = FindObjectOfType<ReelingSystem>();
+                if (reelingSystem != null)
+                {
+                    Debug.Log("ReelingSystem найден автоматически!");
+                    reelingSystem.Initialize(this);
+                    reelingSystem.StartFight(CurrentFish);
+                }
+                else
+                {
+                    Debug.LogError("ReelingSystem не найден! Рыба поймана автоматически.");
+                    OnFishTired();
+                }
+            }
         }
 
-        /// <summary>
-        /// Возобновить ожидание после пустой поклевки
-        /// </summary>
         private void ResumeWaitingAfterMiss()
         {
             if (isFishingInProgress && currentSpot != null && biteSystem != null)
@@ -287,9 +326,6 @@ namespace Fishing.Core
             }
         }
 
-        /// <summary>
-        /// Выбрать случайную рыбу на основе наживки
-        /// </summary>
         private FishData GetRandomFishByBait(BaitData bait)
         {
             if (bait == null || allFishInGame == null || allFishInGame.Count == 0)
@@ -298,7 +334,6 @@ namespace Fishing.Core
                 return null;
             }
 
-            // Собираем всех рыб с шансом на эту наживку
             List<FishData> possibleFish = new List<FishData>();
             List<int> chances = new List<int>();
 
@@ -320,7 +355,6 @@ namespace Fishing.Core
                 return null;
             }
 
-            // Рандомный выбор с учетом вероятности
             int totalChance = 0;
             foreach (int c in chances)
                 totalChance += c;
@@ -338,12 +372,9 @@ namespace Fishing.Core
                 }
             }
 
-            return possibleFish[0]; // На всякий случай
+            return possibleFish[0];
         }
 
-        /// <summary>
-        /// Обработка успешной поимки от ReelingSystem
-        /// </summary>
         public void OnFishTired()
         {
             if (CurrentFish == null || currentFishData == null)
@@ -358,9 +389,6 @@ namespace Fishing.Core
             OnFishLanded?.Invoke(landedFish, landedWeight);
         }
 
-        /// <summary>
-        /// Обработка схода рыбы
-        /// </summary>
         public void OnFishEscape()
         {
             if (!isFishingInProgress)
@@ -372,9 +400,6 @@ namespace Fishing.Core
             Debug.Log("Рыба сорвалась или ушла.");
         }
 
-        /// <summary>
-        /// Сброс всех систем
-        /// </summary>
         private void ResetFishingSystems()
         {
             if (biteSystem != null)
@@ -390,9 +415,9 @@ namespace Fishing.Core
             currentFishData = null;
             currentSpot = null;
             isFishingInProgress = false;
+            Debug.Log("Системы рыбалки сброшены.");
         }
 
-        // Внутренняя реализация IFishable на основе FishData
         private class FishInstance : IFishable
         {
             private FishData data;
