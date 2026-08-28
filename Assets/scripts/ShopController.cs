@@ -14,9 +14,9 @@ public class ShopController : MonoBehaviour
     [SerializeField] private TMP_Text coinsText;
     [SerializeField] private TMP_Text fishText;
     [SerializeField] private TMP_Text messageText;
-    [SerializeField] private TMP_Text baitText; // Текст для отображения наживки
+    [SerializeField] private TMP_Text baitText; // Текст для отображения наживок
 
-    [Header("Кнопки покупки наживок")]
+    [Header("Настройки наживок")]
     [SerializeField] private BaitData baitTesto; // Ссылка на ассет Теста
     [SerializeField] private BaitData baitCherv; // Ссылка на ассет Червя
     [SerializeField] private int baitTestoPrice = 15;
@@ -84,11 +84,9 @@ public class ShopController : MonoBehaviour
 
     private void RefreshUI()
     {
-        // Обновляем монеты
         if (coinsText != null)
             coinsText.text = $"Монеты: {playerWallet.Coins}";
 
-        // Обновляем информацию о рыбе
         if (fishText != null)
         {
             fishText.text =
@@ -96,18 +94,18 @@ public class ShopController : MonoBehaviour
                 $"Стоимость: {fishInventory.TotalValue}";
         }
 
-        // ========== НОВАЯ СИСТЕМА ОТОБРАЖЕНИЯ НАЖИВОК ==========
-        if (baitText != null)
+        // ========== ОТОБРАЖЕНИЕ НАЖИВОК В МАГАЗИНЕ ==========
+        if (baitText != null && playerBaitInventory != null)
         {
-            // Получаем количество наживок
             int testoCount = playerBaitInventory.GetBaitCount(baitTesto);
             int chervCount = playerBaitInventory.GetBaitCount(baitCherv);
 
-            // Формируем текст
             string baitInfo = "=== НАЖИВКИ ===\n";
-            baitInfo += $"🍞 Тесто: {testoCount} шт.\n";
-            baitInfo += $"🐛 Червь: {chervCount} шт.\n";
+            baitInfo += $"Тесто: {testoCount} шт.\n";
+            baitInfo += $"Червь: {chervCount} шт.\n";
             baitInfo += "━━━━━━━━━━━━━━━\n";
+            baitInfo += $"Цена Теста: {baitTestoPrice} монет\n";
+            baitInfo += $"Цена Червя: {baitChervPrice} монет";
 
             baitText.text = baitInfo;
         }
@@ -123,7 +121,7 @@ public class ShopController : MonoBehaviour
         RefreshUI();
     }
 
-    // Методы покупки наживок
+    // ========== МЕТОДЫ ПОКУПКИ НАЖИВОК ==========
     public void BuyTesto()
     {
         BuyBait(baitTesto, baitTestoPrice);
@@ -134,26 +132,7 @@ public class ShopController : MonoBehaviour
         BuyBait(baitCherv, baitChervPrice);
     }
 
-    private void BuyBait(BaitData bait, int price)
-    {
-        if (bait == null)
-        {
-            ShowMessage("Данные наживки не назначены.");
-            return;
-        }
-
-        if (!playerWallet.TrySpendCoins(price))
-        {
-            ShowMessage($"Недостаточно монет. Нужно: {price}");
-            return;
-        }
-
-        playerBaitInventory.AddBait(bait, 1);
-        ShowMessage($"Куплено: {bait.baitName} (1 шт.)");
-        RefreshUI();
-    }
-
-    // Метод для покупки нескольких штук (например, 5)
+    // Методы для покупки нескольких штук (опционально)
     public void BuyTesto5()
     {
         BuyBait(baitTesto, baitTestoPrice * 5, 5);
@@ -162,6 +141,11 @@ public class ShopController : MonoBehaviour
     public void BuyCherv5()
     {
         BuyBait(baitCherv, baitChervPrice * 5, 5);
+    }
+
+    private void BuyBait(BaitData bait, int price)
+    {
+        BuyBait(bait, price, 1);
     }
 
     private void BuyBait(BaitData bait, int price, int amount)

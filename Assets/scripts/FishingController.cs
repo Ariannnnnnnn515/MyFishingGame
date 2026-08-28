@@ -274,7 +274,7 @@ namespace Fishing.Core
                 return;
             }
 
-            // Выбираем рыбу
+            // Выбираем рыбу на основе наживки
             FishData fishData = GetRandomFishByBait(currentBait);
 
             if (fishData == null)
@@ -284,25 +284,24 @@ namespace Fishing.Core
                 return;
             }
 
-            // ========== КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ ==========
+            // УСПЕШНАЯ ПОКЛЕВКА!
             Debug.Log($"УСПЕШНАЯ ПОКЛЕВКА! Рыба: {fishData.fishName}");
 
             currentFishData = fishData;
             CurrentFish = new FishInstance(fishData);
             CurrentFish.OnHooked();
 
-            // Вызываем событие для UI
             OnFishHooked?.Invoke(fishData);
 
-            // ЗАПУСКАЕМ МИНИ-ИГРУ ВЫВАЖИВАНИЯ
+            // ========== КРИТИЧЕСКИЙ МОМЕНТ: ЗАПУСК МИНИ-ИГРЫ ==========
             if (reelingSystem != null)
             {
-                Debug.Log($"Запуск ReelingSystem.StartFight() для рыбы: {fishData.fishName}");
+                Debug.Log($"ЗАПУСК ReelingSystem.StartFight() для рыбы: {fishData.fishName}");
                 reelingSystem.StartFight(CurrentFish);
             }
             else
             {
-                Debug.LogError("ReelingSystem НЕ НАЗНАЧЕН! Пытаемся найти...");
+                Debug.LogError("ReelingSystem НЕ НАЗНАЧЕН! Ищем автоматически...");
                 reelingSystem = FindObjectOfType<ReelingSystem>();
                 if (reelingSystem != null)
                 {

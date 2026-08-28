@@ -1,8 +1,7 @@
-using Fishing.Core;
-using Fishing.Core.Data;
-using Fishing.Core.Interfaces;
-using System;
 using UnityEngine;
+using Fishing.Core.Interfaces;
+using Fishing.Core;
+using TMPro;
 
 namespace Fishing.Systems
 {
@@ -15,81 +14,29 @@ namespace Fishing.Systems
         [SerializeField] private FishingController fishingController;
 
         [Header("Настройки мини-игры")]
-        [SerializeField] private float minFightTime = 3f;
-        [SerializeField] private float maxFightTime = 8f;
-        [SerializeField] private float tensionMultiplier = 1.5f;
-        [SerializeField] private float escapeChance = 0.05f; // 5% шанс схода
+        [SerializeField] private float fightDuration = 10f;
+        [SerializeField] private float targetZoneSize = 0.3f;
+        [SerializeField] private float tensionMultiplier = 0.7f;
 
-        [Header("UI (опционально)")]
-        [SerializeField] private GameObject fightUI;
+        [Header("Интерфейс")]
+        [SerializeField] private GameObject reelingUI;
         [SerializeField] private UnityEngine.UI.Slider tensionSlider;
-        [SerializeField] private UnityEngine.UI.Slider fishTirednessSlider;
+        [SerializeField] private TMP_Text hintText;
 
         private IFishable currentFish;
-        private bool isFighting;
         private float fightTimer;
-        private float targetFightTime;
-        private bool isFishTired;
+        private bool isFighting;
+        private float currentTension;
 
-        public event Action<IFishable> OnFightStarted;
-        public event Action<IFishable> OnFightEnded;
-        public event Action<IFishable> OnFishEscaped;
+        public float CurrentTension => currentTension;
+        public float FishResistance => currentFish?.CurrentResistance ?? 0f;
 
-        private void Awake()
+        public void Initialize(FishingController controller)
         {
-            if (fightUI != null)
-                fightUI.SetActive(false);
+            fishingController = controller;
+            Debug.Log("ReelingSystem инициализирован (классический режим)");
         }
 
-        private void Update()
-        {
-            if (!isFighting || currentFish == null)
-                return;
-
-            // Обновляем таймер
-            fightTimer += Time.deltaTime;
-
-            // Получаем ввод игрока (зажимаем кнопку)
-            float tension = Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0) ? 1f : 0f;
-            tension *= tensionMultiplier;
-
-            // Применяем натяжение к рыбе
-            bool tired = currentFish.ApplyTension(tension);
-
-            // Обновляем UI
-            UpdateUI(tension, tired);
-
-            // Проверяем, устала ли рыба
-            if (tired)
-            {
-                OnFishTired();
-                return;
-            }
-
-            // Проверка на сход рыбы (если игрок не держит кнопку)
-            if (tension <= 0.1f && fightTimer > 1f)
-            {
-                float escapeRoll = UnityEngine.Random.value;
-                if (escapeRoll < escapeChance)
-                {
-                    Debug.Log("Рыба сорвалась! (игрок ослабил натяжение)");
-                    OnFishEscape();
-                    return;
-                }
-            }
-
-            // Проверка на автоматический сход (если слишком долго)
-            if (fightTimer > targetFightTime)
-            {
-                Debug.Log("Рыба сорвалась! (слишком долго)");
-                OnFishEscape();
-                return;
-            }
-        }
-
-        /// <summary>
-        /// Запустить мини-игру вываживания
-        /// </summary>
         public void StartFight(IFishable fish)
         {
             if (fish == null)
@@ -104,28 +51,138 @@ namespace Fishing.Systems
                 return;
             }
 
-            Debug.Log($"ReelingSystem.StartFight() вызван для рыбы: {fish.SpeciesId}");
+            Debug.Log($"ReelingSystem: СТАРТ БОЯ! Рыба: {fish.SpeciesId}");
 
             currentFish = fish;
-            isFighting = true;
-            isFishTired = false;
             fightTimer = 0f;
-            targetFightTime = UnityEngine.Random.Range(minFightTime, maxFightTime);
+            currentTension = 0f;
+            isFighting = true;
 
-            // Показываем UI
-            if (fightUI != null)
-                fightUI.SetActive(true);
+            if (reelingUI != null)
+                reelingUI.SetActive(true);
 
-            // Сбрасываем UI
-            UpdateUI(0f, false);
-
-            OnFightStarted?.Invoke(fish);
-            Debug.Log($"Мини-игра началась! Рыба: {fish.SpeciesId}. Требуется утомить за {targetFightTime:F1}с");
+            UpdateUI(false);
+            Debug.Log("Мини-игра началась: удерживай и отпускай ЛКМ.");
         }
 
-        /// <summary>
-        /// Остановить мини-игру
-        /// </summary>
+        private void Update()
+        {
+            if (!isFighting || currentFish == null)
+                return;
+
+            // Ввод игрока: ЛКМ или пробел
+            float wantedTension = Input.GetMouseButton(0) || Input.GetKey(KeyCode.Space) ? 1f : 0f;
+
+            // Плавно меняем натяжение
+            currentTension = Mathf.MoveTowards(
+                currentTension,
+                wantedTension,
+                tensionMultiplier * Time.deltaTime
+            );
+
+            // Проверяем, находится ли натяжение в целевой зоне
+            float halfZone = targetZoneSize / 2f;
+            bool isInTargetZone = currentTension >= FishResistance - halfZone &&
+                                  currentTension <= FishResistance + halfZone;
+
+            // Обновляем UI
+            UpdateUI(isInTargetZone);
+
+            // Применяем натяжение к рыбе
+            if (isInTargetZone)
+            {
+                // Если в зоне - утомляем рыбу
+                if (currentFish.ApplyTension(currentTension))
+                {
+                    OnFishTired();
+                    return;
+                }
+            }
+            else
+            {
+                // Если вне зоны - рыба отдыхает
+                currentFish.ApplyTension(0f);
+            }
+
+            // Обновляем таймер
+            fightTimer += Time.deltaTime;
+
+            // Если время вышло - рыба сорвалась
+            if (fightTimer >= fightDuration)
+            {
+                Debug.Log("Рыба сорвалась! (время вышло)");
+                OnFishEscape();
+            }
+        }
+
+        private void UpdateUI(bool isInTargetZone)
+        {
+            if (tensionSlider != null)
+                tensionSlider.value = currentTension;
+
+            if (hintText == null)
+                return;
+
+            string instruction;
+            if (isInTargetZone)
+            {
+                instruction = "Держи так!";
+                hintText.color = Color.green;
+            }
+            else if (currentTension < FishResistance)
+            {
+                instruction = "Зажми ЛКМ — натяни леску";
+                hintText.color = Color.yellow;
+            }
+            else
+            {
+                instruction = "Отпусти ЛКМ — ослабь леску";
+                hintText.color = Color.yellow;
+            }
+
+            hintText.text =
+                $"Леска: {currentTension:F2} | Цель: {FishResistance:F2}\n" +
+                $"{instruction}";
+        }
+
+        private void OnFishTired()
+        {
+            if (!isFighting || currentFish == null)
+                return;
+
+            isFighting = false;
+            Debug.Log($"ReelingSystem: Рыба {currentFish.SpeciesId} утомлена! Успех!");
+
+            if (reelingUI != null)
+                reelingUI.SetActive(false);
+
+            if (fishingController != null)
+                fishingController.OnFishTired();
+            else
+                Debug.LogError("ReelingSystem: FishingController не назначен!");
+
+            currentFish = null;
+        }
+
+        private void OnFishEscape()
+        {
+            if (!isFighting || currentFish == null)
+                return;
+
+            isFighting = false;
+            Debug.Log($"ReelingSystem: Рыба {currentFish.SpeciesId} сорвалась!");
+
+            if (reelingUI != null)
+                reelingUI.SetActive(false);
+
+            if (fishingController != null)
+                fishingController.OnFishEscape();
+            else
+                Debug.LogError("ReelingSystem: FishingController не назначен!");
+
+            currentFish = null;
+        }
+
         public void StopFight()
         {
             if (!isFighting)
@@ -133,138 +190,18 @@ namespace Fishing.Systems
 
             isFighting = false;
             currentFish = null;
+            currentTension = 0f;
 
-            if (fightUI != null)
-                fightUI.SetActive(false);
+            if (tensionSlider != null)
+                tensionSlider.value = 0f;
+
+            if (reelingUI != null)
+                reelingUI.SetActive(false);
 
             Debug.Log("ReelingSystem: мини-игра остановлена");
         }
 
-        /// <summary>
-        /// Обработка успешной поимки
-        /// </summary>
-        private void OnFishTired()
-        {
-            if (!isFighting || currentFish == null)
-                return;
-
-            isFighting = false;
-            isFishTired = true;
-
-            Debug.Log($"ReelingSystem: Рыба {currentFish.SpeciesId} утомлена! Успешная поимка!");
-
-            if (fightUI != null)
-                fightUI.SetActive(false);
-
-            OnFightEnded?.Invoke(currentFish);
-
-            // Сообщаем FishingController о поимке
-            if (fishingController != null)
-            {
-                fishingController.OnFishTired();
-            }
-            else
-            {
-                Debug.LogError("ReelingSystem: FishingController не назначен!");
-            }
-
-            currentFish = null;
-        }
-
-        /// <summary>
-        /// Обработка схода рыбы
-        /// </summary>
-        private void OnFishEscape()
-        {
-            if (!isFighting || currentFish == null)
-                return;
-
-            isFighting = false;
-
-            Debug.Log($"ReelingSystem: Рыба {currentFish.SpeciesId} сорвалась!");
-
-            if (fightUI != null)
-                fightUI.SetActive(false);
-
-            OnFishEscaped?.Invoke(currentFish);
-
-            // Сообщаем FishingController о сходе
-            if (fishingController != null)
-            {
-                fishingController.OnFishEscape();
-            }
-            else
-            {
-                Debug.LogError("ReelingSystem: FishingController не назначен!");
-            }
-
-            currentFish = null;
-        }
-
-        /// <summary>
-        /// Обновить UI мини-игры
-        /// </summary>
-        private void UpdateUI(float tension, bool tired)
-        {
-            if (!isFighting || currentFish == null)
-                return;
-
-            // Обновляем слайдеры
-            if (tensionSlider != null)
-            {
-                tensionSlider.value = Mathf.Clamp01(tension / 2f);
-            }
-
-            if (fishTirednessSlider != null)
-            {
-                // Усталость рыбы (используем время боя)
-                float tiredness = Mathf.Clamp01(fightTimer / targetFightTime);
-                fishTirednessSlider.value = tiredness;
-
-                // Меняем цвет, если рыба близка к поимке
-                if (tiredness > 0.8f)
-                {
-                    var color = fishTirednessSlider.fillRect.GetComponent<UnityEngine.UI.Image>();
-                    if (color != null)
-                        color.color = Color.green;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Инициализация системы
-        /// </summary>
-        public void Initialize(FishingController controller)
-        {
-            fishingController = controller;
-            Debug.Log("ReelingSystem инициализирован");
-        }
-
-        /// <summary>
-        /// Проверка, идет ли бой
-        /// </summary>
-        public bool IsFighting()
-        {
-            return isFighting;
-        }
-
-        /// <summary>
-        /// Получить текущую рыбу
-        /// </summary>
-        public IFishable GetCurrentFish()
-        {
-            return currentFish;
-        }
-
-        /// <summary>
-        /// Получить прогресс боя (0-1)
-        /// </summary>
-        public float GetFightProgress()
-        {
-            if (!isFighting || targetFightTime <= 0)
-                return 0f;
-
-            return Mathf.Clamp01(fightTimer / targetFightTime);
-        }
+        public bool IsFighting() => isFighting;
+        public IFishable GetCurrentFish() => currentFish;
     }
 }

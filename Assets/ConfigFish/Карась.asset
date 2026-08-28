@@ -25,4 +25,4 @@ MonoBehaviour:
   - bait: {fileID: 11400000, guid: cc75273524032a647ac7aace3753e4b7, type: 2}
     chance: 70
   - bait: {fileID: 11400000, guid: eb134a447b4dc0c438dc89e562959b46, type: 2}
-    chance: 35
+    chance: 30
