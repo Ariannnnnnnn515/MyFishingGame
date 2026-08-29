@@ -7,10 +7,10 @@ using UnityEngine.UI;
 public class BaitSlotUI : MonoBehaviour
 {
     [Header("UI Components")]
-    public Image iconImage;
-    public TextMeshProUGUI nameText;
-    public TextMeshProUGUI countText;
-    public GameObject selectedMarker;
+    [SerializeField] private Image iconImage;
+    [SerializeField] private TextMeshProUGUI nameText;
+    [SerializeField] private TextMeshProUGUI countText;
+    [SerializeField] private GameObject activeMarker; // Объект с текстом "Активна"
 
     private BaitData myBait;
     private FishingController fishingController;
@@ -19,7 +19,7 @@ public class BaitSlotUI : MonoBehaviour
     {
         if (bait == null)
         {
-            Debug.LogError("BaitSlotUI: передан null BaitData!");
+            Debug.LogError("BaitSlotUI: BaitData == null!");
             return;
         }
 
@@ -34,7 +34,6 @@ public class BaitSlotUI : MonoBehaviour
             nameText.text = bait.baitName;
 
         UpdateCount(count);
-        UpdateSelection(false);
 
         // Назначаем обработчик кнопки
         Button button = GetComponent<Button>();
@@ -43,12 +42,15 @@ public class BaitSlotUI : MonoBehaviour
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(OnSlotClick);
         }
+
+        // Скрываем маркер "Активна"
+        UpdateSelection(false);
     }
 
     public void UpdateSelection(bool isSelected)
     {
-        if (selectedMarker != null)
-            selectedMarker.SetActive(isSelected);
+        if (activeMarker != null)
+            activeMarker.SetActive(isSelected);
     }
 
     public void UpdateCount(int newCount)
@@ -57,56 +59,30 @@ public class BaitSlotUI : MonoBehaviour
             countText.text = newCount.ToString();
     }
 
-    /// <summary>
-    /// Получить данные наживки для этого слота
-    /// </summary>
-    public BaitData GetBaitData()
-    {
-        return myBait;
-    }
+    public BaitData GetBaitData() => myBait;
 
     private void OnSlotClick()
     {
-        if (fishingController == null)
+        if (fishingController == null || myBait == null)
         {
-            Debug.LogError("FishingController не назначен!");
+            Debug.LogError("FishingController или BaitData == null!");
             return;
         }
 
-        if (myBait == null)
+        // Проверяем наличие наживки
+        if (PlayerBaitInventory.Instance != null &&
+            PlayerBaitInventory.Instance.GetBaitCount(myBait) <= 0)
         {
-            Debug.LogError("BaitData не назначен!");
+            Debug.Log($"Наживка {myBait.baitName} закончилась!");
             return;
         }
 
-        // Проверяем, есть ли эта наживка в инвентаре
-        if (PlayerBaitInventory.Instance != null)
-        {
-            int count = PlayerBaitInventory.Instance.GetBaitCount(myBait);
-            if (count <= 0)
-            {
-                Debug.Log($"Наживка {myBait.baitName} закончилась!");
-                return;
-            }
-        }
-
-        // Устанавливаем наживку
+        // Выбираем наживку
         fishingController.SetCurrentBait(myBait);
 
-        // Обновляем UI выбора
+        // Обновляем панель
         BaitSelectionPanelUI panel = GetComponentInParent<BaitSelectionPanelUI>();
         if (panel != null)
-        {
             panel.RefreshSelection();
-        }
-    }
-
-    public void RefreshSelection()
-    {
-        if (fishingController != null && myBait != null)
-        {
-            BaitData currentBait = fishingController.GetCurrentBait();
-            UpdateSelection(currentBait == myBait);
-        }
     }
 }
