@@ -28,14 +28,18 @@ public class BaitSlotUI : MonoBehaviour
 
         // Заполняем данные
         if (iconImage != null)
-            iconImage.sprite = bait.baitIcon;
-        
+        {
+            // Иконка может отсутствовать — просто оставляем пустую
+            if (bait.baitIcon != null)
+                iconImage.sprite = bait.baitIcon;
+            // Если иконки нет — ничего не делаем, просто оставляем пустое место
+        }
+
         if (nameText != null)
             nameText.text = bait.baitName;
-        
+
         UpdateCount(count);
 
-        // Назначаем обработчик кнопки
         Button button = GetComponent<Button>();
         if (button != null)
         {
@@ -64,7 +68,7 @@ public class BaitSlotUI : MonoBehaviour
     {
         if (fishingController == null || myBait == null) return;
 
-        if (PlayerBaitInventory.Instance != null && 
+        if (PlayerBaitInventory.Instance != null &&
             PlayerBaitInventory.Instance.GetBaitCount(myBait) <= 0)
         {
             Debug.Log($"Наживка {myBait.baitName} закончилась!");

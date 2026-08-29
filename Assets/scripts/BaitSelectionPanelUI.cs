@@ -19,12 +19,10 @@ public class BaitSelectionPanelUI : MonoBehaviour
     private List<BaitSlotUI> currentSlots = new List<BaitSlotUI>();
     private bool isPanelOpen = false;
 
-    // Синглтон для доступа из других скриптов
     public static BaitSelectionPanelUI Instance { get; private set; }
 
     private void Awake()
     {
-        // Синглтон
         if (Instance == null)
             Instance = this;
         else
@@ -36,9 +34,15 @@ public class BaitSelectionPanelUI : MonoBehaviour
 
     private void Start()
     {
-        if (panelRoot != null)
-            panelRoot.SetActive(false);
+        if (panelRoot == null)
+        {
+            Debug.LogError($"BaitSelectionPanelUI: panelRoot не назначен на объекте {gameObject.name}!");
+            return;
+        }
+
+        panelRoot.SetActive(false);
         isPanelOpen = false;
+        Debug.Log($"BaitSelectionPanelUI: инициализирован на {gameObject.name}, panelRoot = {panelRoot.name}");
     }
 
     private void OnEnable()
@@ -55,14 +59,17 @@ public class BaitSelectionPanelUI : MonoBehaviour
 
     public void OpenPanel()
     {
+        Debug.Log($"BaitSelectionPanelUI: OpenPanel() на {gameObject.name}");
+
         if (panelRoot == null)
         {
-            Debug.LogError("panelRoot не назначен в BaitSelectionPanelUI!");
+            Debug.LogError("BaitSelectionPanelUI: panelRoot == null!");
             return;
         }
 
         panelRoot.SetActive(true);
         isPanelOpen = true;
+        Debug.Log($"BaitSelectionPanelUI: panelRoot.activeSelf = {panelRoot.activeSelf}");
         UpdateUI();
     }
 
@@ -72,24 +79,21 @@ public class BaitSelectionPanelUI : MonoBehaviour
         {
             panelRoot.SetActive(false);
             isPanelOpen = false;
+            Debug.Log("BaitSelectionPanelUI: Панель закрыта");
         }
     }
 
     public void TogglePanel()
     {
-        if (isPanelOpen)
-            ClosePanel();
-        else
-            OpenPanel();
+        if (isPanelOpen) ClosePanel();
+        else OpenPanel();
     }
 
     public void UpdateUI()
     {
-        Debug.Log($"BaitSelectionPanelUI: UpdateUI() вызван. Панель открыта: {isPanelOpen}");
-
         if (!isPanelOpen)
         {
-            Debug.Log("BaitSelectionPanelUI: Панель закрыта, обновление UI пропущено.");
+            Debug.Log("BaitSelectionPanelUI: Панель закрыта, обновление пропущено");
             return;
         }
 
@@ -121,7 +125,7 @@ public class BaitSelectionPanelUI : MonoBehaviour
 
             int count = PlayerBaitInventory.Instance.GetBaitCount(bait);
             GameObject newSlot = Instantiate(slotPrefab, slotParent);
-            
+
             BaitSlotUI slotUI = newSlot.GetComponent<BaitSlotUI>();
             if (slotUI != null)
             {
@@ -156,7 +160,7 @@ public class BaitSelectionPanelUI : MonoBehaviour
         text.fontSize = 18;
         text.color = Color.gray;
         text.alignment = TextAlignmentOptions.Center;
-        
+
         var rect = emptyMsg.GetComponent<RectTransform>();
         rect.sizeDelta = new Vector2(200, 60);
         rect.anchoredPosition = Vector2.zero;
