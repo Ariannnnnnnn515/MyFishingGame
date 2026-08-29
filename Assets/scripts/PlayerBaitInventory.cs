@@ -49,8 +49,6 @@ public class PlayerBaitInventory : MonoBehaviour
 
     public void AddBait(BaitData bait, int amount)
     {
-        Debug.Log($"PlayerBaitInventory.AddBait() вызван! Наживка: {bait?.baitName ?? "null"}, Кол-во: {amount}");
-
         if (bait == null)
         {
             Debug.LogWarning("Попытка добавить null наживку!");
@@ -64,16 +62,14 @@ public class PlayerBaitInventory : MonoBehaviour
         }
 
         if (baitCounts.ContainsKey(bait))
-        {
             baitCounts[bait] += amount;
-        }
         else
-        {
             baitCounts[bait] = amount;
-        }
 
         Debug.Log($"Добавлена наживка: {bait.baitName} +{amount} (всего: {baitCounts[bait]})");
-        OnInventoryChanged?.Invoke();
+        
+        // ЭТОТ ВЫЗОВ ОБЯЗАТЕЛЕН!
+        OnInventoryChanged?.Invoke(); 
     }
 
     public bool SpendBait(BaitData bait, int amount = 1)

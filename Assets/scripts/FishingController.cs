@@ -31,7 +31,6 @@ namespace Fishing.Core
 
         private bool isFishingInProgress;
         private bool hasEnoughBait;
-        private bool isInitialized = false;
 
         private void Awake()
         {
@@ -75,7 +74,6 @@ namespace Fishing.Core
             }
             else
             {
-                isInitialized = true;
                 Debug.Log($"FishingController инициализирован. Наживка: {currentBait.baitName}");
             }
         }
@@ -293,7 +291,7 @@ namespace Fishing.Core
 
             OnFishHooked?.Invoke(fishData);
 
-            // ========== КРИТИЧЕСКИЙ МОМЕНТ: ЗАПУСК МИНИ-ИГРЫ ==========
+            // ЗАПУСК МИНИ-ИГРЫ
             if (reelingSystem != null)
             {
                 Debug.Log($"ЗАПУСК ReelingSystem.StartFight() для рыбы: {fishData.fishName}");
@@ -302,7 +300,8 @@ namespace Fishing.Core
             else
             {
                 Debug.LogError("ReelingSystem НЕ НАЗНАЧЕН! Ищем автоматически...");
-                reelingSystem = FindObjectOfType<ReelingSystem>();
+                // ИСПРАВЛЕНО: Используем FindFirstObjectByType вместо FindObjectOfType
+                reelingSystem = FindFirstObjectByType<ReelingSystem>();
                 if (reelingSystem != null)
                 {
                     Debug.Log("ReelingSystem найден автоматически!");

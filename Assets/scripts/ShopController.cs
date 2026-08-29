@@ -165,5 +165,12 @@ public class ShopController : MonoBehaviour
         playerBaitInventory.AddBait(bait, amount);
         ShowMessage($"Куплено: {bait.baitName} ({amount} шт.)");
         RefreshUI();
+
+        // ========== ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ПАНЕЛИ ==========
+        if (BaitSelectionPanelUI.Instance != null && BaitSelectionPanelUI.Instance.IsPanelOpen())
+        {
+            Debug.Log("ShopController: Принудительное обновление панели наживок!");
+            BaitSelectionPanelUI.Instance.UpdateUI();
+        }
     }
 }

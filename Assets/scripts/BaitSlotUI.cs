@@ -10,7 +10,7 @@ public class BaitSlotUI : MonoBehaviour
     [SerializeField] private Image iconImage;
     [SerializeField] private TextMeshProUGUI nameText;
     [SerializeField] private TextMeshProUGUI countText;
-    [SerializeField] private GameObject activeMarker; // Объект с текстом "Активна"
+    [SerializeField] private GameObject activeMarker;
 
     private BaitData myBait;
     private FishingController fishingController;
@@ -26,16 +26,16 @@ public class BaitSlotUI : MonoBehaviour
         myBait = bait;
         fishingController = controller;
 
-        // Заполняем UI
+        // Р—Р°РїРѕР»РЅСЏРµРј РґР°РЅРЅС‹Рµ
         if (iconImage != null)
             iconImage.sprite = bait.baitIcon;
-
+        
         if (nameText != null)
             nameText.text = bait.baitName;
-
+        
         UpdateCount(count);
 
-        // Назначаем обработчик кнопки
+        // РќР°Р·РЅР°С‡Р°РµРј РѕР±СЂР°Р±РѕС‚С‡РёРє РєРЅРѕРїРєРё
         Button button = GetComponent<Button>();
         if (button != null)
         {
@@ -43,7 +43,6 @@ public class BaitSlotUI : MonoBehaviour
             button.onClick.AddListener(OnSlotClick);
         }
 
-        // Скрываем маркер "Активна"
         UpdateSelection(false);
     }
 
@@ -63,24 +62,17 @@ public class BaitSlotUI : MonoBehaviour
 
     private void OnSlotClick()
     {
-        if (fishingController == null || myBait == null)
-        {
-            Debug.LogError("FishingController или BaitData == null!");
-            return;
-        }
+        if (fishingController == null || myBait == null) return;
 
-        // Проверяем наличие наживки
-        if (PlayerBaitInventory.Instance != null &&
+        if (PlayerBaitInventory.Instance != null && 
             PlayerBaitInventory.Instance.GetBaitCount(myBait) <= 0)
         {
-            Debug.Log($"Наживка {myBait.baitName} закончилась!");
+            Debug.Log($"РќР°Р¶РёРІРєР° {myBait.baitName} Р·Р°РєРѕРЅС‡РёР»Р°СЃСЊ!");
             return;
         }
 
-        // Выбираем наживку
         fishingController.SetCurrentBait(myBait);
 
-        // Обновляем панель
         BaitSelectionPanelUI panel = GetComponentInParent<BaitSelectionPanelUI>();
         if (panel != null)
             panel.RefreshSelection();

@@ -1,37 +1,48 @@
 using Fishing.Core;
 using Fishing.Core.Data;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class BaitSelectionPanelUI : MonoBehaviour
 {
     [Header("UI Components")]
-    [SerializeField] private GameObject slotPrefab; // Префаб кнопки-слота
-    [SerializeField] private Transform slotParent; // Родительский объект для кнопок (просто пустой GameObject)
+    [SerializeField] private GameObject slotPrefab;
+    [SerializeField] private Transform slotParent;
     [SerializeField] private FishingController fishingController;
 
-    [Header("Настройки панели")]
-    [SerializeField] private GameObject panelRoot; // Корневой объект панели (отключается/включается)
-    [SerializeField] private Button closeButton; // Кнопка "Закрыть"
+    [Header("РќР°СЃС‚СЂРѕР№РєРё РїР°РЅРµР»Рё")]
+    [SerializeField] private GameObject panelRoot;
+    [SerializeField] private Button closeButton;
 
     private List<BaitSlotUI> currentSlots = new List<BaitSlotUI>();
+    private bool isPanelOpen = false;
+
+    // РЎРёРЅРіР»С‚РѕРЅ РґР»СЏ РґРѕСЃС‚СѓРїР° РёР· РґСЂСѓРіРёС… СЃРєСЂРёРїС‚РѕРІ
+    public static BaitSelectionPanelUI Instance { get; private set; }
+
+    private void Awake()
+    {
+        // РЎРёРЅРіР»С‚РѕРЅ
+        if (Instance == null)
+            Instance = this;
+        else
+            Destroy(gameObject);
+
+        if (closeButton != null)
+            closeButton.onClick.AddListener(ClosePanel);
+    }
 
     private void Start()
     {
-        // Привязываем кнопку закрытия
-        if (closeButton != null)
-            closeButton.onClick.AddListener(ClosePanel);
-
-        // Панель изначально скрыта
         if (panelRoot != null)
             panelRoot.SetActive(false);
+        isPanelOpen = false;
     }
 
     private void OnEnable()
     {
-        UpdateUI();
         if (PlayerBaitInventory.Instance != null)
             PlayerBaitInventory.Instance.OnInventoryChanged += UpdateUI;
     }
@@ -42,62 +53,75 @@ public class BaitSelectionPanelUI : MonoBehaviour
             PlayerBaitInventory.Instance.OnInventoryChanged -= UpdateUI;
     }
 
-    /// <summary>
-    /// Открыть панель
-    /// </summary>
     public void OpenPanel()
     {
-        if (panelRoot != null)
-            panelRoot.SetActive(true);
+        if (panelRoot == null)
+        {
+            Debug.LogError("panelRoot РЅРµ РЅР°Р·РЅР°С‡РµРЅ РІ BaitSelectionPanelUI!");
+            return;
+        }
+
+        panelRoot.SetActive(true);
+        isPanelOpen = true;
         UpdateUI();
     }
 
-    /// <summary>
-    /// Закрыть панель
-    /// </summary>
     public void ClosePanel()
     {
         if (panelRoot != null)
+        {
             panelRoot.SetActive(false);
+            isPanelOpen = false;
+        }
     }
 
-    /// <summary>
-    /// Обновить список наживок
-    /// </summary>
+    public void TogglePanel()
+    {
+        if (isPanelOpen)
+            ClosePanel();
+        else
+            OpenPanel();
+    }
+
     public void UpdateUI()
     {
-        // 1. Удаляем старые кнопки
+        Debug.Log($"BaitSelectionPanelUI: UpdateUI() РІС‹Р·РІР°РЅ. РџР°РЅРµР»СЊ РѕС‚РєСЂС‹С‚Р°: {isPanelOpen}");
+
+        if (!isPanelOpen)
+        {
+            Debug.Log("BaitSelectionPanelUI: РџР°РЅРµР»СЊ Р·Р°РєСЂС‹С‚Р°, РѕР±РЅРѕРІР»РµРЅРёРµ UI РїСЂРѕРїСѓС‰РµРЅРѕ.");
+            return;
+        }
+
+        // РћС‡РёС‰Р°РµРј СЃС‚Р°СЂС‹Рµ РєРЅРѕРїРєРё
         foreach (Transform child in slotParent)
         {
             Destroy(child.gameObject);
         }
         currentSlots.Clear();
 
-        // 2. Проверяем инвентарь
         if (PlayerBaitInventory.Instance == null)
         {
             Debug.LogError("PlayerBaitInventory.Instance == null!");
             return;
         }
 
-        // 3. Получаем список наживок игрока
         List<BaitData> ownedBaits = PlayerBaitInventory.Instance.GetOwnedBaits();
 
-        // 4. Если наживок нет - показываем сообщение
         if (ownedBaits.Count == 0)
         {
             CreateEmptyMessage();
             return;
         }
 
-        // 5. Создаём кнопки для каждой наживки
+        // РЎРѕР·РґР°С‘Рј РєРЅРѕРїРєРё РґР»СЏ РєР°Р¶РґРѕР№ РЅР°Р¶РёРІРєРё
         foreach (BaitData bait in ownedBaits)
         {
             if (bait == null) continue;
 
             int count = PlayerBaitInventory.Instance.GetBaitCount(bait);
             GameObject newSlot = Instantiate(slotPrefab, slotParent);
-
+            
             BaitSlotUI slotUI = newSlot.GetComponent<BaitSlotUI>();
             if (slotUI != null)
             {
@@ -106,13 +130,9 @@ public class BaitSelectionPanelUI : MonoBehaviour
             }
         }
 
-        // 6. Обновляем отметки "Активна"
         RefreshSelection();
     }
 
-    /// <summary>
-    /// Обновить состояние выбора для всех слотов
-    /// </summary>
     public void RefreshSelection()
     {
         if (fishingController == null) return;
@@ -120,7 +140,8 @@ public class BaitSelectionPanelUI : MonoBehaviour
         BaitData currentBait = fishingController.GetCurrentBait();
         foreach (var slot in currentSlots)
         {
-            slot.UpdateSelection(currentBait == slot.GetBaitData());
+            if (slot != null)
+                slot.UpdateSelection(currentBait == slot.GetBaitData());
         }
     }
 
@@ -131,13 +152,18 @@ public class BaitSelectionPanelUI : MonoBehaviour
         emptyMsg.transform.localScale = Vector3.one;
 
         var text = emptyMsg.AddComponent<TextMeshProUGUI>();
-        text.text = "Нет доступных наживок";
-        text.fontSize = 20;
+        text.text = "РќРµС‚ РґРѕСЃС‚СѓРїРЅС‹С… РЅР°Р¶РёРІРѕРє\nРљСѓРїРёС‚Рµ РІ РјР°РіР°Р·РёРЅРµ!";
+        text.fontSize = 18;
         text.color = Color.gray;
         text.alignment = TextAlignmentOptions.Center;
-
+        
         var rect = emptyMsg.GetComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(200, 50);
+        rect.sizeDelta = new Vector2(200, 60);
         rect.anchoredPosition = Vector2.zero;
+    }
+
+    public bool IsPanelOpen()
+    {
+        return isPanelOpen;
     }
 }
