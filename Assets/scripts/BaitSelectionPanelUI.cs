@@ -36,13 +36,14 @@ public class BaitSelectionPanelUI : MonoBehaviour
     {
         if (panelRoot == null)
         {
-            Debug.LogError($"BaitSelectionPanelUI: panelRoot не назначен на объекте {gameObject.name}!");
+            Debug.LogError("BaitSelectionPanelUI: panelRoot не назначен!");
             return;
         }
 
+        // Жёсткое выключение при старте
         panelRoot.SetActive(false);
         isPanelOpen = false;
-        Debug.Log($"BaitSelectionPanelUI: инициализирован на {gameObject.name}, panelRoot = {panelRoot.name}");
+        Debug.Log($"BaitSelectionPanelUI: инициализирован, panelRoot = {panelRoot.name}");
     }
 
     private void OnEnable()
@@ -67,26 +68,43 @@ public class BaitSelectionPanelUI : MonoBehaviour
             return;
         }
 
+        // ====== ЖЁСТКОЕ ВКЛЮЧЕНИЕ ======
         panelRoot.SetActive(true);
         isPanelOpen = true;
+
+        // ПРОВЕРКА: Убеждаемся, что панель действительно включилась
         Debug.Log($"BaitSelectionPanelUI: panelRoot.activeSelf = {panelRoot.activeSelf}");
+        Debug.Log($"BaitSelectionPanelUI: panelRoot.activeInHierarchy = {panelRoot.activeInHierarchy}");
+
+        // Если панель не включилась - пробуем принудительно через трансформ
+        if (!panelRoot.activeSelf)
+        {
+            Debug.LogError("BaitSelectionPanelUI: panelRoot не включился через SetActive! Пробуем костыль...");
+            panelRoot.SetActive(false);
+            panelRoot.SetActive(true);
+        }
+
+        // Обновляем UI
         UpdateUI();
     }
 
     public void ClosePanel()
     {
+        Debug.Log("BaitSelectionPanelUI: ClosePanel()");
+
         if (panelRoot != null)
         {
             panelRoot.SetActive(false);
             isPanelOpen = false;
-            Debug.Log("BaitSelectionPanelUI: Панель закрыта");
         }
     }
 
     public void TogglePanel()
     {
-        if (isPanelOpen) ClosePanel();
-        else OpenPanel();
+        if (isPanelOpen)
+            ClosePanel();
+        else
+            OpenPanel();
     }
 
     public void UpdateUI()

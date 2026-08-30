@@ -26,14 +26,8 @@ public class BaitSlotUI : MonoBehaviour
         myBait = bait;
         fishingController = controller;
 
-        // Заполняем данные
-        if (iconImage != null)
-        {
-            // Иконка может отсутствовать — просто оставляем пустую
-            if (bait.baitIcon != null)
-                iconImage.sprite = bait.baitIcon;
-            // Если иконки нет — ничего не делаем, просто оставляем пустое место
-        }
+        if (iconImage != null && bait.baitIcon != null)
+            iconImage.sprite = bait.baitIcon;
 
         if (nameText != null)
             nameText.text = bait.baitName;
